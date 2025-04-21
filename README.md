@@ -102,11 +102,3 @@ Server is running on http://localhost:3000   (Express 後端 API)
 📮 有任何問題請直接看 `vite.config.js` 與 `server/index.js`，我們已盡量保持架構清晰！
 
 ```
-
----
-
-這份 `README.md` 適合給：
-- 同組成員 clone 下來直接照做
-- 助教批改時快速了解怎麼跑
-
-若你要我幫你直接寫入專案根目錄、更新 `.gitignore`、補 `.nvmrc`，只要說一聲「幫我整包寫進去」我就幫你一次完成 😎
