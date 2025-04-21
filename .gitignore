@@ -1,0 +1,13 @@
+
+# Node.js
+node_modules/
+dist/
+.env
+.DS_Store
+
+# Vite cache
+.vite/
+
+# IDE 編輯器設定
+.idea/
+.vscode/
