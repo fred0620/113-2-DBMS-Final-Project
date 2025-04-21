@@ -1,13 +1,18 @@
 {
   "name": "113-2-DBMS-Final-Project",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently \"pnpm run dev-client\" \"pnpm --filter server dev\"",
+    "dev-client": "vite"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.4.1"
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^8.2.2",
+    "vite": "^6.3.2"
+  },
+  "packageManager": "pnpm@10.4.1",
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  }
 }
