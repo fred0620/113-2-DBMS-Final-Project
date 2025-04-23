@@ -6,7 +6,7 @@ const getSopPage = async (req, res) => {
   const sopId = req.params.sop_id;
 
   try {
-    await logSOPView(req, sopId); // 記錄瀏覽行為
+    
     
     // 取得 SOP 資料（nodes + edges）
     const sopData = await sopModel.getSopById(sopId);
@@ -17,6 +17,7 @@ const getSopPage = async (req, res) => {
     const moduleData = await sopModel.getModuleById(sopId);
     const edgesData = await sopModel.getEdgeById(sopId);
 
+    await logSOPView(req, sopId); // 記錄瀏覽行為
     const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
     
     res.json({
