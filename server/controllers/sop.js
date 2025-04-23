@@ -3,7 +3,7 @@ const { logSOPView } = require('../services/viewService');
 const { Viewers_NUM } = require('../models/viewModel');
 
 const getSopPage = async (req, res) => {
-  const sopId = req.params.id;
+  const sopId = req.params.sop_id;
 
   try {
     await logSOPView(req, sopId); // 記錄瀏覽行為
