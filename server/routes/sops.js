@@ -7,6 +7,6 @@ router.get('/', (req, res) => {
 });
 
 const { getSopPage } = require('../controllers/sop');
-router.get('/sops/:sop_id/flowchart', getSopPage);
+router.get('/:sop_id/flowchart', getSopPage);
 
 module.exports = router;
