@@ -5,7 +5,10 @@ const getLatestViewId = async () => {
     const [rows] = await db.execute(
       'SELECT View_ID FROM VIEW ORDER BY View_ID DESC LIMIT 1'
     );
-    return rows.length ? rows[0].View_ID : null;
+    if (rows.length === 0) return "V000000001";
+
+    const num = parseInt(rows[0].View_ID.slice(1)) + 1;
+    return "V" + num.toString().padStart(9, "0");
   };
   
 // 新增一筆 VIEW 紀錄
