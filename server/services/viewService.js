@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+//const { v4: uuidv4 } = require('uuid');
 const { getLatestViewId, insertViewRecord } = require('../models/viewModel');
 
 const logSOPView = async (req, sopId) => {
@@ -8,16 +8,18 @@ const logSOPView = async (req, sopId) => {
     // 有登入，不是很確定
     personalId = req.user.id;
   } else {
+    personalId ='-1'
     // 沒登入就給隨機 ID，存在 cookie
+    /*
     if (!req.cookies.personalId) {
       personalId = `GUEST_${uuidv4()}`;
       res.cookie('personalId', personalId, { httpOnly: true, maxAge: 31536000000 });
     } else {
       personalId = req.cookies.personalId;
     }
+    */
   }
-  //測試先隨便設
-  //personalId ='-1'
+  
 
   const viewId = await getLatestViewId();
   await insertViewRecord(viewId, sopId, personalId);
