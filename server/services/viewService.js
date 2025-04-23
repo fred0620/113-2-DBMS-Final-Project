@@ -1,4 +1,6 @@
+
 //const { v4: uuidv4 } = require('uuid');
+
 const { getLatestViewId, insertViewRecord } = require('../models/viewModel');
 
 const logSOPView = async (req, sopId) => {
@@ -17,9 +19,9 @@ const logSOPView = async (req, sopId) => {
     } else {
       personalId = req.cookies.personalId;
     }
+
     */
   }
-  
 
   const viewId = await getLatestViewId();
   await insertViewRecord(viewId, sopId, personalId);
