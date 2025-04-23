@@ -1,4 +1,4 @@
-const { getSopById } = require('../models/sopModel');
+const sopModel = require('../models/sopModel');
 const { logSOPView } = require('../services/viewService');
 const { Viewers_NUM } = require('../models/viewModel');
 
@@ -9,16 +9,21 @@ const getSopPage = async (req, res) => {
     await logSOPView(req, sopId); // 記錄瀏覽行為
     
     // 取得 SOP 資料（nodes + edges）
-    const sopData = await getSopById(sopId);
+    const sopData = await sopModel.getSopById(sopId);
     if (!sopData) {
       return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
     }
+
+    const moduleData = await sopModel.getModuleById(sopId);
+    const edgesData = await sopModel.getEdgeById(sopId);
 
     const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
     
     res.json({
       status: 'success',
-      data:{...sopData},
+      data:{...sopData,
+      nodes:moduleData,
+      edges:edgesData},
       message: `You viewed SOP ${sopId}`,
       views: viewCount
     });
