@@ -1,4 +1,4 @@
-const sopModel = require('../models/sopModel');
+const sopModel = require('../models/sopsModel');
 const { logSOPView } = require('../services/viewService');
 const { Viewers_NUM } = require('../models/viewModel');
 
