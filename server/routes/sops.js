@@ -6,4 +6,7 @@ router.get('/', (req, res) => {
   res.json({ success: true, data: 'Hello from backend!' });
 });
 
+const { getSopPage } = require('../controllers/sop');
+router.get('/sops/:sop_id/flowchart', getSopPage);
+
 module.exports = router;
