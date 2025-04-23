@@ -1,13 +1,19 @@
 const db=require('../config/db')
 
 const getSopById = async (sopId) => {
-  // 1. 查 SOP 主資料
-  const [[sop]] = await db.execute('SELECT * FROM SOP WHERE SOP_ID = ?', [sopId]);
-
+  // 查 SOP 主資料
+  const [sop] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, SOP_Content
+    FROM SOP, Team 
+    WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
   if (!sop) return null;
 
-  // 2. 查 nodes
-  const [nodes] = await db.execute(`WITH latest_modules AS (
+  return sop[0];
+};
+
+const getModuleById = async (sopId) => {
+
+  //查 Module
+  const [module] = await db.execute(`WITH latest_modules AS (
         SELECT Module_ID,  Title, Details,  staff_in_charge, type,
         ROW_NUMBER() OVER (PARTITION BY Module_ID ORDER BY create_time DESC) AS rn
         FROM Module
@@ -18,7 +24,11 @@ const getSopById = async (sopId) => {
         WHERE rn = 1
         ORDER BY Module_ID ASC;`, [sopId]);
 
-  // 3. 查 edges
+  return module;
+};
+
+const getEdgeById = async (sopId) => {
+  // 查 edges
   const [edges] = await db.execute(`WITH latest_modules AS (
       SELECT Module_ID, ROW_NUMBER() OVER (PARTITION BY Module_ID ORDER BY create_time DESC) AS rn
       FROM Module
@@ -31,7 +41,7 @@ const getSopById = async (sopId) => {
       ORDER BY e.Edge_ID ASC;`, [sopId]);
 
   // 4. 組合格式
-  return { sop, nodes, edges };
+  return edges ;
 };
 
-module.exports = { getSopById };
+module.exports = { getSopById,getModuleById,getEdgeById };
