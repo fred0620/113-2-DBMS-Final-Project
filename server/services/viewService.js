@@ -1,22 +1,26 @@
-<<<<<<< Updated upstream
-=======
-const { v4: uuidv4 } = require('uuid');
+
+//const { v4: uuidv4 } = require('uuid');
+
 const { getLatestViewId, insertViewRecord } = require('../models/viewModel');
 
 const logSOPView = async (req, sopId) => {
   let personalId;
 
   if (req.user && req.user.id) {
-    // 有登入，但不是很確定
+    // 有登入，不是很確定
     personalId = req.user.id;
   } else {
+    personalId ='-1'
     // 沒登入就給隨機 ID，存在 cookie
+    /*
     if (!req.cookies.personalId) {
       personalId = `GUEST_${uuidv4()}`;
       res.cookie('personalId', personalId, { httpOnly: true, maxAge: 31536000000 });
     } else {
       personalId = req.cookies.personalId;
     }
+
+    */
   }
 
   const viewId = await getLatestViewId();
@@ -24,4 +28,3 @@ const logSOPView = async (req, sopId) => {
 };
 
 module.exports = { logSOPView };
->>>>>>> Stashed changes
