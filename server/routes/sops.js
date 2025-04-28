@@ -9,6 +9,7 @@ router.get('/', (req, res) => {
 const { getSopPage } = require('../controllers/sop');
 router.get('/:sop_id/flowchart', getSopPage);
 
-router.post('/:sop_id/modules-batch', );
+const { recordModules } = require('../controllers/update_module');
+router.post('/:sop_id/modules-batch', recordModules);
 
 module.exports = router;
