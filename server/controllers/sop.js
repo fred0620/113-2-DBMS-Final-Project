@@ -6,14 +6,12 @@ const getSopPage = async (req, res) => {
   const sopId = req.params.sop_id;
 
   try {
-    
-    
+        
     // 取得 SOP 資料（nodes + edges）
-    const {sop, updateTime, edges, module} = await sopModel.getSopById(sopId);
+    const {sop,  edges, module} = await sopModel.getSopById(sopId);
     if (!sop) {
       return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
     }
-
 
     await logSOPView(req, sopId); // 記錄瀏覽行為
     const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
@@ -25,7 +23,6 @@ const getSopPage = async (req, res) => {
       edges:edges},
       message: `You viewed SOP ${sopId}`,
       views: viewCount,
-      Update_Time: updateTime
     });
   } catch (err) {
     console.error(`[SOP_ERROR] Failed to load SOP ${sopId}:`, err.message);
