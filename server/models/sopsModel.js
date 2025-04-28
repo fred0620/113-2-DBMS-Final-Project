@@ -8,7 +8,7 @@ const getSopById = async (sopId) => {
   if (!sop) return null;
   
   // 抓最新更新時間
-  const Create_Time = await db.execute(`SELECT Create_Time
+  const update_time = await db.execute(`SELECT Create_Time
     FROM SOP 
     WHERE SOP_ID = ?`, [sopId]);
   if (!sop) return null;
@@ -47,7 +47,7 @@ const getSopById = async (sopId) => {
     ORDER BY Module_ID ASC;`, [sopId, ...edgeIds]);
 
 
-  return {sop, edges, module};
+  return {sop, update_time, edges, module};
 };
 
 
