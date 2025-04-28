@@ -12,13 +12,16 @@ const getSopById = async (sopId) => {
     FROM SOP 
     WHERE SOP_ID = ?`, [sopId]);
   const updateTime = updateTimeRow?.Create_Time;
+  
+
+  // find biggest Version
+  const[[version]]=await db.execute(`SELECT Max(Version) as New_Version
+    FROM Module
+    WHERE SOP_ID = ?`, [sopId])
+
 
   // 查 edges
-  const [edges] = await db.execute(`WITH latest_modules AS (
-    SELECT Module_ID,Create_Time, ROW_NUMBER() OVER (PARTITION BY Module_ID ORDER BY create_time DESC) AS rn
-    FROM Module
-    WHERE SOP_ID = ?
-    )
+  const [edges] = await db.execute(`
     SELECT  e.from_module, e.to_module
     FROM Edges e
     JOIN latest_modules m_from 
@@ -37,12 +40,7 @@ const getSopById = async (sopId) => {
   }
 
   //查 Module
-  const [module] = await db.execute(`WITH latest_modules AS (
-    SELECT Module_ID,  Title, Details,  staff_in_charge, type,
-    ROW_NUMBER() OVER (PARTITION BY Module_ID ORDER BY create_time DESC) AS rn
-    FROM Module
-    WHERE SOP_ID = ?
-    )
+  const [module] = await db.execute(`
     SELECT Module_ID,  Title, Details,  staff_in_charge, type
     FROM latest_modules
     WHERE rn = 1
