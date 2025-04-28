@@ -2,53 +2,32 @@ const db=require('../config/db')
 
 const getSopById = async (sopId) => {
   // 查 SOP 主資料
-  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, SOP_Content
+  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, SOP_Content, Create_Time
     FROM SOP, Team 
     WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
   if (!sop) return null;
   
-  // 抓最新更新時間
-  const [[updateTimeRow]] = await db.execute(`SELECT Create_Time
-    FROM SOP 
-    WHERE SOP_ID = ?`, [sopId]);
-  const updateTime = updateTimeRow?.Create_Time;
-  
-
   // find biggest Version
   const[[version]]=await db.execute(`SELECT Max(Version) as New_Version
     FROM Module
-    WHERE SOP_ID = ?`, [sopId])
-
+    WHERE SOP_ID = ?`, [sopId]);
+  if (!version?.New_Version)  return null;
 
   // 查 edges
   const [edges] = await db.execute(`
-    SELECT  e.from_module, e.to_module
-    FROM Edges e
-    JOIN latest_modules m_from 
-    ON e.from_module = m_from.Module_ID 
-    AND e.from_create_time=m_from.Create_Time  
-    AND m_from.rn = 1
-    JOIN latest_modules m_to 
-    ON e.to_module = m_to.Module_ID 
-    AND e.to_create_time=m_to.Create_Time 
-    AND m_to.rn = 1
-    ORDER BY e.Edge_ID ASC;`, [sopId]);
-
-  const edgeIds = [...new Set(edges.flatMap(edge => [edge.from_module, edge.to_module]))];
-  if (edgeIds.length === 0) {
-    return { sopData, updateTime, edgesData: edges, moduleData: [] };
-  }
+    SELECT  from_module, to_module
+    FROM Edges
+    Where Version_Edge=?
+    ORDER BY Edge_ID ASC;`, [version.New_Version]);
 
   //查 Module
   const [module] = await db.execute(`
     SELECT Module_ID,  Title, Details,  staff_in_charge, type
-    FROM latest_modules
-    WHERE rn = 1
-    AND Module_ID IN (${edgeIds.map(() => '?').join(',')})
-    ORDER BY Module_ID ASC;`, [sopId, ...edgeIds]);
+    FROM Module
+    Where Version=?
+    ORDER BY Module_ID ASC;`, [version.New_Version]);
 
-
-  return {sop, updateTime, edges, module};
+  return {sop, version: version.New_Version, edges, module};
 };
 
 
