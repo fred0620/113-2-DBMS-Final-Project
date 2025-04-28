@@ -7,6 +7,12 @@ const getSopById = async (sopId) => {
     WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
   if (!sop) return null;
   
+  // 抓最新更新時間
+  const Create_Time = await db.execute(`SELECT Create_Time
+    FROM SOP 
+    WHERE SOP_ID = ?`, [sopId]);
+  if (!sop) return null;
+
   // 查 edges
   const [edges] = await db.execute(`WITH latest_modules AS (
     SELECT Module_ID,Create_Time, ROW_NUMBER() OVER (PARTITION BY Module_ID ORDER BY create_time DESC) AS rn
