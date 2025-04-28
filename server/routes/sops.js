@@ -9,6 +9,6 @@ router.get('/', (req, res) => {
 const { getSopPage } = require('../controllers/sop');
 router.get('/:sop_id/flowchart', getSopPage);
 
-router.post('/:sop_id/modules-batch', getSopPage);
+router.post('/:sop_id/modules-batch', ...);
 
 module.exports = router;
