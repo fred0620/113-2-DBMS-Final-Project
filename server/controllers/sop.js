@@ -9,24 +9,23 @@ const getSopPage = async (req, res) => {
     
     
     // 取得 SOP 資料（nodes + edges）
-    const sopData = await sopModel.getSopById(sopId);
-    if (!sopData) {
+    const {sop, updateTime, edges, module} = await sopModel.getSopById(sopId);
+    if (!sop) {
       return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
     }
 
-    const moduleData = await sopModel.getModuleById(sopId);
-    const edgesData = await sopModel.getEdgeById(sopId);
 
     await logSOPView(req, sopId); // 記錄瀏覽行為
     const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
     
     res.json({
       status: 'success',
-      data:{...sopData,
-      nodes:moduleData,
-      edges:edgesData},
+      data:{...sop,
+      nodes:module,
+      edges:edges},
       message: `You viewed SOP ${sopId}`,
-      views: viewCount
+      views: viewCount,
+      Update_Time: updateTime
     });
   } catch (err) {
     console.error(`[SOP_ERROR] Failed to load SOP ${sopId}:`, err.message);
