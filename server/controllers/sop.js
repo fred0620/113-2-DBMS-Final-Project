@@ -117,7 +117,64 @@ const getModule = async (req, res) => {
   }
 };
 
+const updateSopinfo = async (req, res, next) => {
+  const urlSopId = req.params.sop_id;
+  const { SOP_ID, SOP_Name, SOP_Content, Team_in_charge, Updated_by } = req.body;
 
 
-module.exports = { getSopPage,searchSops,getModule,createSOP  };
+  try {
+
+    if (!SOP_ID || SOP_ID !== urlSopId) {
+      return res.status(400).json({ message: 'SOP_ID 與 URL 不一致' });
+    }
+    if (!SOP_Name || !Team_in_charge || !Updated_by) {
+      return res.status(400).json({ message: '缺少必要欄位' });
+    }
+
+
+    const [[teamRow]] = await db.query(
+      'SELECT 1 FROM Team WHERE Team_ID = ?',
+      [Team_in_charge.trim()]
+    );
+    if (!teamRow) {
+      return res.status(400).json({ message: `Team_ID '${Team_in_charge}' 不存在` });
+    }
+
+
+    const [[adminRow]] = await db.query(
+      'SELECT 1 FROM Administrator WHERE Administrator_ID = ?',
+      [Updated_by.trim()]
+    );
+    if (!adminRow) {
+      return res.status(400).json({ message: `Administrator_ID '${Updated_by}' 不存在` });
+    }
+
+   
+    const updated = await sopModel.updateSopinfo({
+      SOP_ID,
+      SOP_Name,
+      SOP_Content,
+      Team_ID: Team_in_charge.trim(),   
+      Updated_by
+    });
+
+  
+    res.json({
+      message: 'SOP updated successfully',
+      sop: {
+        id: updated.id,
+        SOP_Name: updated.SOP_Name,
+        SOP_Content: updated.SOP_Content,
+        Team_in_charge                
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+
+
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo   };
 

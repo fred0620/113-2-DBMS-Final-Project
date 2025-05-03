@@ -92,5 +92,38 @@ const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
     Team_in_charge: Team_ID     
   };
 };
+const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_by }) => {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
 
-module.exports = { getSopById,searchSops,createSop };
+   
+    await conn.execute(
+      `UPDATE SOP 
+       SET SOP_Name = ?, SOP_Content = ?, Team_in_charge = ? 
+       WHERE SOP_ID = ?`,
+      [SOP_Name, SOP_Content, Team_ID, SOP_ID]
+    );
+    const logText = `Updated SOP fields by ${Updated_by}`;
+    await conn.execute(
+      `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
+       VALUES (?,?,?)`,
+      [SOP_ID, Updated_by, logText]
+    );
+
+    await conn.commit();
+    return {
+      id: SOP_ID,
+      SOP_Name,
+      SOP_Content,
+      Team_in_charge: Team_ID
+    };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+};
+
+module.exports = { getSopById,searchSops,createSop,updateSopinfo };

@@ -15,6 +15,6 @@ router.post('/create', ctrl.createSOP);
 router.get('/:sop_id/flowchart', getSopPage);
 router.get('/search', searchSops);
 router.get('/:module_id/display', getModule );
-
+router.patch('/:sop_id/info', ctrl.updateSopinfo);
 
 module.exports = router;
