@@ -8,8 +8,7 @@ const getModuleById = async (module_id) => {
         WHERE Module_ID = ?;`, [module_id]);
     if (!version?.New_Version)  return null;
   
-    //查 Module
-// 查 Module（支援 staff_in_charge 可為 NULL）
+    // 查 Module（staff_in_charge 可為 NULL）
     const [moduleRows] = await db.execute(`
         SELECT M.type, M.Module_ID,
             M.Title, M.Details,
