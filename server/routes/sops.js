@@ -8,9 +8,13 @@ router.get('/', (req, res) => {
 
 const { getSopPage } = require('../controllers/sop');
 const { searchSops } = require('../controllers/sop');
+
 const ctrl    = require('../controllers/sop');
+const { getModule } = require('../controllers/sop');
 router.post('/create', ctrl.createSOP);
 router.get('/:sop_id/flowchart', getSopPage);
 router.get('/search', searchSops);
+router.get('/:module_id/display', getModule );
+
 
 module.exports = router;
