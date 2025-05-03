@@ -1,3 +1,4 @@
+const db = require('../config/db');
 const sopModel = require('../models/sopsModel');
 const { logSOPView } = require('../services/viewService');
 const { Viewers_NUM } = require('../models/viewModel');
@@ -52,7 +53,38 @@ const searchSops = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error', detail: err.message });
   }
 };
+const createSOP = async (req, res, next) => {
+  console.log('req.body =', req.body);
+  try {
+    const { SOP_Name, SOP_Content, Team_in_charge } = req.body;
+    if (!SOP_Name || !SOP_Content || !Team_in_charge) {
+      return res.status(400).json({ message: '缺少必要欄位' });
+    }
+    const [[teamRow]] = await db.query(
+      'SELECT Team_ID FROM Team WHERE Team_Name = ?',
+      [Team_in_charge.trim()]
+    );
+
+    if (!teamRow) {
+      return res.status(400).json({ message: `Team '${Team_in_charge}' 不存在，請先建立` });
+    }
+    const Team_ID = teamRow.Team_ID; 
+    const newSop = await sopModel.createSop({ SOP_Name, SOP_Content, Team_ID });
+
+    res.status(201).json({
+      message: 'SOP created successfully',
+      sop: {
+        id: newSop.id,
+        SOP_Name,
+        SOP_Content,
+        Team_in_charge       
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 
 
-module.exports = { getSopPage,searchSops };
+module.exports = { getSopPage,searchSops,createSOP  };

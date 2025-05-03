@@ -1,13 +1,17 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
-const sopsRouter = require('./routes/sops');
-const userRouter = require('./routes/user');
+const app = express();
+
 
 require('./config/db');
 
 
 app.use(cors());
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+
+const sopsRouter = require('./routes/sops');
+const userRouter = require('./routes/user');
 app.use('/api/sops', sopsRouter);
 app.use('/api/users', userRouter);
 

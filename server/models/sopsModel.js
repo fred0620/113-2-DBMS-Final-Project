@@ -69,5 +69,28 @@ const values = [];
   return rows;
   
 };
+// server/models/sopsModel.js （片段）
+const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
 
-module.exports = { getSopById,searchSops };
+  const [insertResult] = await db.query(
+    'INSERT INTO SOP (SOP_Name, SOP_Content, Team_in_charge) VALUES (?,?,?)',
+    [SOP_Name, SOP_Content, Team_ID]
+  );
+  
+  let newId = insertResult.insertId;
+  if (!newId) {
+    const [rows] = await db.query(
+      'SELECT SOP_ID FROM SOP WHERE SOP_Name=? AND Team_in_charge=? ORDER BY Create_Time DESC LIMIT 1',
+      [SOP_Name, Team_ID]
+    );
+    newId = rows[0]?.SOP_ID ?? null;
+  }
+  return {
+    id: newId,
+    SOP_Name,
+    SOP_Content,
+    Team_in_charge: Team_ID     
+  };
+};
+
+module.exports = { getSopById,searchSops,createSop };
