@@ -4,8 +4,11 @@ import HomePrivate from './pages/HomePrivate';
 import SearchResult from './pages/SearchResult';
 import SOPDetail from './pages/SOPDetail';
 import MySOPList from './pages/MySOPList';
+import ModulePage from './pages/ModulePage'; 
+import EditSOPPage from './pages/EditSOPPage';
+import ModuleEditPage from './pages/ModuleEditPage';
+import ModuleCreatePage from './pages/ModuleCreatePage';
 
-// ⚠️ In a real app, replace this with auth context / hook ???????????
 const isLoggedIn = () => !!localStorage.getItem('token');
 
 export default function App() {
@@ -15,7 +18,11 @@ export default function App() {
       <Route path="/search" element={<SearchResult />} />
       <Route path="/sop/:id" element={<SOPDetail />} />
       <Route path="/mypage" element={<MySOPList />} />
+      <Route path="/module/:id" element={<ModulePage />} /> 
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/sop/:id/edit" element={<EditSOPPage />} />
+      <Route path="/module/:id/edit" element={<ModuleEditPage />} />
+      <Route path="/module/:id/create" element={<ModuleCreatePage />} /> 
     </Routes>
   );
 }
