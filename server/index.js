@@ -8,7 +8,7 @@ require('./config/db');
 
 app.use(cors());
 app.use(express.json()); 
-app.use(express.urlencoded({ extended: true }));
+
 
 const sopsRouter = require('./routes/sops');
 const userRouter = require('./routes/user');
