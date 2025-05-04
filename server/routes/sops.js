@@ -17,4 +17,7 @@ router.get('/search', searchSops);
 router.get('/:module_id/display', getModule );
 router.patch('/:sop_id/info', ctrl.updateSopinfo);
 
+const { recordModules } = require('../controllers/update_module');
+router.post('/:sop_id/modules-batch', recordModules);
+
 module.exports = router;
