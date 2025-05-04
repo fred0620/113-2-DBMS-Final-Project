@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowRightCircle, Briefcase } from 'lucide-react';
+import { ArrowRightCircle, Briefcase, User } from 'lucide-react';
 
-export default function SOPCard({ sop, editable = false }) {
+export default function SOPCard({ sop }) {
   return (
     <div className="border rounded-lg p-4 bg-gray-50 flex flex-col justify-between h-60 max-w-xs shadow-sm hover:shadow-md transition-shadow">
-      {/* 標題 */}
+      {/* 圖標+標題 */}
       <div>
         <div className="flex items-start gap-2 mb-2">
           <ArrowRightCircle className="w-5 h-5 shrink-0 text-primary" />
@@ -18,33 +18,22 @@ export default function SOPCard({ sop, editable = false }) {
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">{sop.description}</p>
         )}
 
-        {/* 部門資訊 */}
+        {/* SOP資訊 */}
         <div className="space-y-1 text-sm text-gray-700">
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-gray-500" />
-            <span>所屬部門：{sop.department || '未指定'}</span> {/* ✅ 改這裡 */}
+            <span>所屬部門：{sop.team}</span>  
           </div>
         </div>
       </div>
 
-      {/* 查看 / 編輯 */}
-      <div className="mt-4 flex justify-center gap-3">
-        <Link
-          to={`/module/${sop.id}`}
-          className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
-        >
-          查看
-        </Link>
-
-        {editable && (
-          <Link
-            to={`/module/${sop.id}/edit`}
-            className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
-          >
-            編輯
-          </Link>
-        )}
-      </div>
+      {/* 查看按鈕 */}
+      <Link
+        to={`/module/${sop.SOP_ID}`} // ⭐改成 /module/{SOP_ID}
+        className="mx-auto mt-4 bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
+      >
+        查看
+      </Link>
     </div>
   );
 }
