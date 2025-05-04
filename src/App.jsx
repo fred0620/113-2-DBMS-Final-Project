@@ -3,6 +3,7 @@ import HomePublic from './pages/HomePublic';
 import HomePrivate from './pages/HomePrivate';
 import SearchResult from './pages/SearchResult';
 import SOPDetail from './pages/SOPDetail';
+import MySOPList from './pages/MySOPList';
 
 // ⚠️ In a real app, replace this with auth context / hook ???????????
 const isLoggedIn = () => !!localStorage.getItem('token');
@@ -13,6 +14,7 @@ export default function App() {
       <Route path="/" element={isLoggedIn() ? <HomePrivate /> : <HomePublic />} />
       <Route path="/search" element={<SearchResult />} />
       <Route path="/sop/:id" element={<SOPDetail />} />
+      <Route path="/mypage" element={<MySOPList />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
