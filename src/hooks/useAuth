@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react';
 
 export function useAuth() {
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
-  const [user, setUser]   = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 永遠使用 mockUser 覆寫登入狀態
-    const mockUser = {
-      id: 'A0001',
-      name: '王小明',
-      department: '學生事務處',
-      team: '學生事務處生活事務暨僑生輔導組',
-    };
-
-    localStorage.setItem('token', 'mock-token-123');
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setToken('mock-token-123');
-    setUser(mockUser);
+    if (!user) {
+      // fallback mock user（可選，要開發階段才加）
+      const mockUser = {
+        id: 'A0001',
+        username: '王小明',
+        department: '學生事務處',
+        team: '學生事務處生活事務暨僑生輔導組',
+      };
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      setUser(mockUser);
+    }
     setLoading(false);
-  }, []);
+  }, [user]);
 
-  return { token, user, loading };
+  return { user, loading, isLoggedIn: !!user };
 }
