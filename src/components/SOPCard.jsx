@@ -22,7 +22,7 @@ export default function SOPCard({ sop, editable = false }) {
         <div className="space-y-1 text-sm text-gray-700">
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-gray-500" />
-            <span>所屬部門：{sop.department || '未指定'}</span> {/* ✅ 改這裡 */}
+            <span>所屬部門：{sop.department || '未指定'}</span> 
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@ export default function SOPCard({ sop, editable = false }) {
 
         {editable && (
           <Link
-            to={`/module/${sop.id}/edit`}
+            to={`/sop/${sop.SOP_ID}/edit`}
             className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
           >
             編輯
