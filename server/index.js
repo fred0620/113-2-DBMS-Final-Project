@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 const sopsRouter = require('./routes/sops');
-const userRouter = require('./routes/user');
+const userRouter = require('./routes/users');
 app.use('/api/sops', sopsRouter);
 app.use('/api/users', userRouter);
 
