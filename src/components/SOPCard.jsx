@@ -15,14 +15,16 @@ export default function SOPCard({ sop, editable = false }) {
 
         {/* 簡介 */}
         {sop.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{sop.description}</p>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+            {sop.description}
+          </p>
         )}
 
         {/* 部門資訊 */}
         <div className="space-y-1 text-sm text-gray-700">
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-gray-500" />
-            <span>所屬部門：{sop.department || '未指定'}</span> 
+            <span>所屬部門：{sop.department || '未指定'}</span>
           </div>
         </div>
       </div>
@@ -38,7 +40,7 @@ export default function SOPCard({ sop, editable = false }) {
 
         {editable && (
           <Link
-            to={`/sop/${sop.SOP_ID}/edit`}
+            to={`/sop/${sop.id}/edit`}
             className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
           >
             編輯
