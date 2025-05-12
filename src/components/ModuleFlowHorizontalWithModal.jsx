@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import ReactFlow, {
   Controls,
   MarkerType,
   Position,
-  Handle,
+  Handle
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -21,7 +21,7 @@ function StepNode({ data, isFirst, isLast }) {
 
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Trigger asChild>
-          <div className="bg-gray-200 hover:bg-gray-300 rounded-lg cursor-pointer px-8 py-6 min-w-[220px] text-center text-sm shadow-md border border-gray-300">
+          <div className="bg-gray-200 hover:bg-gray-300 rounded-lg cursor-pointer px-5 py-3 min-w-[110px] text-center text-sm shadow">
             {data.brief || data.title}
           </div>
         </Dialog.Trigger>
@@ -75,7 +75,7 @@ function StepNode({ data, isFirst, isLast }) {
               </section>
             )}
 
-            <Dialog.Close className="mt-6 inline-block px-4 py-2 bg-primary text-white rounded text-sm">
+            <Dialog.Close className="mt-4 inline-block px-4 py-1 bg-primary text-white rounded text-sm">
               Close
             </Dialog.Close>
           </Dialog.Content>
