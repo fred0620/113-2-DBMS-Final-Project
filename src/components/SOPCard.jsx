@@ -15,7 +15,9 @@ export default function SOPCard({ sop }) {
 
         {/* 簡介 */}
         {sop.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{sop.description}</p>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+            {sop.description}
+          </p>
         )}
 
         {/* SOP資訊 */}
@@ -27,13 +29,24 @@ export default function SOPCard({ sop }) {
         </div>
       </div>
 
-      {/* 查看按鈕 */}
-      <Link
-        to={`/module/${sop.SOP_ID}`} // ⭐改成 /module/{SOP_ID}
-        className="mx-auto mt-4 bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
-      >
-        查看
-      </Link>
+      {/* 查看 / 編輯 */}
+      <div className="mt-4 flex justify-center gap-3">
+        <Link
+          to={`/module/${sop.id}`}
+          className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
+        >
+          查看
+        </Link>
+
+        {editable && (
+          <Link
+            to={`/sop/${sop.id}/edit`}
+            className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
+          >
+            編輯
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

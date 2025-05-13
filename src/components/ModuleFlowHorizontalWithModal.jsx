@@ -8,12 +8,17 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import * as Dialog from '@radix-ui/react-dialog';
 
-function StepNode({ data }) {
+/* ----------  選單節點 (可點擊開 Modal)  ---------- */
+function StepNode({ data, isFirst, isLast }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <Handle type="target" position={Position.Left} id="t" />
+      {/* 連接點 — 上方 (第一節點不顯示) */}
+      {!isFirst && (
+        <Handle type="target" position={Position.Top} id="t" />
+      )}
+
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Trigger asChild>
           <div className="bg-gray-200 hover:bg-gray-300 rounded-lg cursor-pointer px-5 py-3 min-w-[110px] text-center text-sm shadow">
@@ -21,29 +26,39 @@ function StepNode({ data }) {
           </div>
         </Dialog.Trigger>
 
-        {/* === 彈窗 === */}
+        {/* ----------  Modal ---------- */}
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] bg-white rounded-lg shadow-lg p-6 space-y-4 z-50">
-            <Dialog.Title className="text-lg font-bold mb-2">{data.title}</Dialog.Title>
+          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] bg-white rounded-lg shadow-lg p-6 space-y-4 z-50">
+            <Dialog.Title className="text-lg font-bold mb-2">
+              {data.title}
+            </Dialog.Title>
 
+            {/* (1) Module name 由上方 Title 顯示，此處略  */}
+            {/* (2) Detail */}
             {data.details && (
               <section>
-                <h3 className="font-semibold mb-1">Details</h3>
-                <p className="text-sm whitespace-pre-line">{data.details}</p>
+                <h3 className="font-semibold mb-1">Detail</h3>
+                <p className="text-sm whitespace-pre-line">
+                  {data.details}
+                </p>
               </section>
             )}
 
+            {/* (3) Person in charge */}
             {data.person && (
               <section>
                 <h3 className="font-semibold mb-1">Person in charge</h3>
-                <p className="text-sm whitespace-pre-line">{data.person}</p>
+                <p className="text-sm whitespace-pre-line">
+                  {data.person}
+                </p>
               </section>
             )}
 
+            {/* (4) Documents */}
             {data.docs?.length > 0 && (
               <section>
-                <h3 className="font-semibold mb-1">Document</h3>
+                <h3 className="font-semibold mb-1">Documents</h3>
                 <div className="flex gap-3 flex-wrap">
                   {data.docs.map((d) => (
                     <a
@@ -66,69 +81,79 @@ function StepNode({ data }) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-      <Handle type="source" position={Position.Right} id="s" />
+
+      {/* 連接點 — 下方 (最後節點不顯示) */}
+      {!isLast && (
+        <Handle type="source" position={Position.Bottom} id="s" />
+      )}
     </>
   );
 }
 
+/* ----------  主元件  ---------- */
 export default function ModuleFlowHorizontalWithModal({ sop }) {
   const nodeTypes = useMemo(() => ({ step: StepNode }), []);
+  const flowRef = useRef(null);
+  const [rfInstance, setRfInstance] = useState(null);
 
-  const childrenMap = {};
-  sop.edges.forEach(({ from, to }) => {
-    if (!childrenMap[from]) childrenMap[from] = [];
-    childrenMap[from].push(to);
-  });
+  /* === 將節點資料轉成 React‑Flow 需要的結構 === */
+  const baseX = 350;   // ★ 調整水平置中位置
+  const baseY = 80;
+  const gapY  = 220;
 
-  const baseX = 240;
-  const baseY = 160;
-  const gapX  = 260;
-  const branchGap = 120;
+  const nodes = sop.steps.map((step, idx) => ({
+    id: step.id.toString(),
+    type: 'step',
+    position: { x: baseX, y: baseY + idx * gapY },
+    data: step,
+    draggable: false,
+  }));
 
-  const nodes = sop.steps.map((s, idx) => {
-    let y = baseY;
-    const x = baseX + idx * gapX;
-
-    Object.entries(childrenMap).forEach(([pid, arr]) => {
-      if (arr.length > 1) {
-        const pos = arr.indexOf(s.id);
-        if (pos >= 0) {
-          const offset = branchGap * (Math.floor(pos / 2) + 1);
-          y = pos % 2 === 0 ? baseY - offset : baseY + offset;
-        }
-      }
-    });
-
-    return {
-      id: s.id.toString(),
-      type: 'step',
-      position: { x, y },
-      data: s
-    };
-  });
-
-  /* 產生 edges (箭頭) */
+  /* === 直線 Edge === */
   const edges = sop.edges.map((e) => ({
     id: `${e.from}-${e.to}`,
     source: e.from.toString(),
     target: e.to.toString(),
-    type: 'smoothstep',
+    type: 'straight',            // 直線
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 18,
       height: 18,
-      color: '#475569'
-    }
+      color: '#475569',
+    },
+    style: { stroke: '#475569', strokeWidth: 1.5 },
   }));
 
+  /* === 自動 fitView 一次 === */
+  useEffect(() => {
+    if (rfInstance) {
+      setTimeout(() => {
+        rfInstance.fitView({ padding: 0.15 });
+      }, 300);
+    }
+  }, [rfInstance]);
+
   return (
-    <div className="module-flow-wrapper" style={{ width: '100%', height: 420 }}>
+    <div
+      ref={flowRef}
+      style={{
+        width: '100%',
+        height: '700px',
+        background: '#f9fafb',
+        border: '1px solid #d9d9d9',
+        overflow: 'auto',
+      }}
+    >
       <ReactFlow
-        nodes={nodes}
+        nodes={nodes.map((n, i) => ({
+          ...n,
+          data: { ...n.data, isFirst: i === 0, isLast: i === nodes.length - 1 },
+        }))}
         edges={edges}
         nodeTypes={nodeTypes}
+        onInit={setRfInstance}
         fitView
-        defaultEdgeOptions={{ type: 'smoothstep' }}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         proOptions={{ hideAttribution: true }}
       >
         <Controls position="bottom-left" />
