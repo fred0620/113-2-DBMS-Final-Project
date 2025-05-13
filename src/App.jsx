@@ -7,13 +7,12 @@ import MySOPList from './pages/MySOPList';
 
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
+//import FavoriteSOPPage from './pages/FavoriteSOPPage';
+
 import ModulePage from './pages/ModulePage'; 
 import EditSOPPage from './pages/EditSOPPage';
 import ModuleEditPage from './pages/ModuleEditPage';
 import ModuleCreatePage from './pages/ModuleCreatePage';
-import RegisterPage from './pages/RegisterPage';
-import LoginPage from './pages/LoginPage';
-import FavoriteSOPPage from './pages/FavoriteSOPPage';
 
  main
 const isLoggedIn = () => !!localStorage.getItem('user');
@@ -26,17 +25,15 @@ export default function App() {
       <Route path="/sop/:id" element={<SOPDetail />} />
 
       <Route path="/mypage" element={<MySOPList />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-
       <Route path="/sop/:id/edit" element={<EditSOPPage />} />
       <Route path="/module/:id" element={<ModulePage />} />
       <Route path="/module/:id/edit" element={<ModuleEditPage />} />
       <Route path="/module/:id/create" element={<ModuleCreatePage />} />
+
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/favorites" element={<FavoriteSOPPage />} />
-      
+      {/* <Route path="/favorites" element={<FavoriteSOPPage />} />  */}
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
