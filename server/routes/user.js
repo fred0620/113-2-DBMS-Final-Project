@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+/*
 const db = require('../config/db');
 
 router.get('/', async (req, res) => {
@@ -11,5 +12,9 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
+*/
+const auth    = require('../controllers/login');
+router.post("/login", auth.login);
+
 
 module.exports = router;
