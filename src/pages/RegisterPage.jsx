@@ -17,16 +17,19 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username, password }),
       });
-
-      if (!res.ok) throw new Error('註冊失敗，請檢查資料');
-
-      const { user } = await res.json(); // 👈 只接收 user
-      localStorage.setItem('user', JSON.stringify(user));
+  
+      const data = await res.json();
+  
+      if (!res.ok) throw new Error(data.message || '註冊失敗');
+  
+      localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/');
     } catch (err) {
+      console.error('註冊失敗：', err);
       setError(err.message);
     }
   };
+  
 
   return (
     <div className="bg-secondary min-h-screen flex flex-col">

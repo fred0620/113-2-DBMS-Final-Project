@@ -7,14 +7,13 @@ import MySOPList from './pages/MySOPList';
 
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
-//import FavoriteSOPPage from './pages/FavoriteSOPPage';
+import FavoriteSOPPage from './pages/FavoriteSOPPage';
 
 import ModulePage from './pages/ModulePage'; 
 import EditSOPPage from './pages/EditSOPPage';
 import ModuleEditPage from './pages/ModuleEditPage';
 import ModuleCreatePage from './pages/ModuleCreatePage';
 
- main
 const isLoggedIn = () => !!localStorage.getItem('user');
 
 export default function App() {
@@ -32,7 +31,7 @@ export default function App() {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      {/* <Route path="/favorites" element={<FavoriteSOPPage />} />  */}
+      <Route path="/favorites" element={<FavoriteSOPPage />} />  
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

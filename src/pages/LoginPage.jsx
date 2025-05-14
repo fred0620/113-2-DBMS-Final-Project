@@ -16,16 +16,23 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+  
       if (!res.ok) throw new Error('登入失敗，請檢查帳密');
-
-      const { user } = await res.json(); // 👈 只接收 user，不處理 token
+  
+      const data = await res.json();         // <- 注意這裡解開整個物件
+      console.log('✅ 後端回傳的整體資料:', data); // ✅ DEBUG 1
+  
+      const user = data.user;                // <- 取出 user 欄位
+      console.log('✅ 提取的 user 欄位:', user);   // ✅ DEBUG 2
+  
       localStorage.setItem('user', JSON.stringify(user));
       navigate('/');
     } catch (err) {
+      console.error('❌ 登入錯誤:', err);     // ✅ DEBUG 3
       setError(err.message);
     }
   };
+  
 
   return (
     <div className="bg-secondary min-h-screen flex flex-col">
