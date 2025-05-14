@@ -5,13 +5,6 @@ import Footer from '../components/Footer';
 import SOPCard from '../components/SOPCard';
 import { useAuth } from '../hooks/useAuth';
 
-/**
- * MySOPList
- * - 專屬登入者的 SOP 一覽
- * - 預設以使用者部門 / 組別為固定篩選條件
- * - 提供關鍵字搜尋 + 分頁 + 新增 SOP
- */
-
 export default function MySOPList() {
   const { user, loading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
@@ -28,10 +21,6 @@ export default function MySOPList() {
 
   const pageSize = 8;
   const totalPages = Math.ceil(total / pageSize);
-
-  useEffect(() => {
-    if (user) fetchSops({ keyword: '', page: 1 });
-  }, [user]);
 
   const fetchSops = async ({ keyword, page }) => {
     setIsLoading(true);
@@ -65,6 +54,12 @@ export default function MySOPList() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isAuthLoading && user) {
+      fetchSops({ keyword: '', page: 1 });
+    }
+  }, [user, isAuthLoading]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
