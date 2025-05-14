@@ -12,10 +12,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-dialog": "^1.1.11",
     "axios": "^1.9.0",
     "lucide-react": "^0.503.0",
+=======
+>>>>>>> c0c304199bf2973225c582d6333a909e6de08017
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.50.1",
