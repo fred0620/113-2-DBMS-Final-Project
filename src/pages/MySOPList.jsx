@@ -40,8 +40,6 @@ export default function MySOPList() {
         title: item.title ?? item.SOP_Name,
         description: item.description ?? item.SOP_Content,
         department: item.department ?? item.Team_in_charge,
-        team: item.team ?? item.Team_in_charge ?? item.department,
-        teamName: item.team ?? item.Team_in_charge, // ✅ 顯示用
       });
 
       const formatted = Array.isArray(result) ? result.map(normalize) : [];
