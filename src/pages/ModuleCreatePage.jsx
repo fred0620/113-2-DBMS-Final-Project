@@ -1,3 +1,4 @@
+// ✅ ModuleCreatePage.jsx（加入 SOP Info）
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
@@ -33,8 +34,6 @@ function StepNode({ data, selected }) {
   const inputCls = 'w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary';
 
   const handleSave = () => {
-    //測試行
-    console.log('SOP ID:', id); 
     if (!form.title.trim()) return alert('Module Name 為必填！');
     data.onSave(form);
     setOpen(false);
@@ -135,7 +134,7 @@ export default function ModuleCreatePage() {
         data: {
           title: '', detail: '', person: '', docs: '',
           onSave: (updated) => setNodes((prev) => prev.map((n) => n.id === newId ? { ...n, data: { ...n.data, ...updated } } : n)),
-          onDelete: () => handleDeleteNode(newId)
+          onDelete: () => handleDeleteNode(newId),
         },
       })
     );
@@ -174,7 +173,7 @@ export default function ModuleCreatePage() {
         body: JSON.stringify({
           modules,
           edges: edgesData,
-          Updated_by: '307193',
+          Updated_by: '302912', // 改為模擬使用者 ID
         }),
       });
 
@@ -191,7 +190,7 @@ export default function ModuleCreatePage() {
   };
 
   const nodeTypes = useMemo(() => ({ step: StepNode }), []);
-
+//要改
   return (
     <>
       <NavBar />
