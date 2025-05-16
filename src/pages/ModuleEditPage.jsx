@@ -1,193 +1,378 @@
-import { useCallback, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import NavBar   from '../components/NavBar';
-import Footer   from '../components/Footer';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import NavBar from '../components/NavBar';
+import Footer from '../components/Footer';
 import ReactFlow, {
-  addEdge,
   Background,
   Controls,
-  MiniMap,
-  MarkerType,
   Handle,
-  Position,
-  useNodesState,
+  MarkerType,
+  MiniMap,
+  addEdge,
   useEdgesState,
+  useNodesState,
+  Position,
 } from 'reactflow';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowLeft } from 'lucide-react';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
+import { nanoid } from 'nanoid';
+import { useAuth } from '../hooks/useAuth';
 import 'reactflow/dist/style.css';
 
-/* ---------- 節點 UI（可拖曳 / 可開 Modal 編輯） ---------- */
-function StepNode({ data }) {
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const PRIMARY = '#0f307a';
+
+/* ──────────── StepNode（Modal 與 CreatePage 同版型） ──────────── */
+function StepNode({ data, selected }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    title: data.title || '',
+    detail: data.detail || '',
+    person: data.person || '',
+    docs: data.docs || '',
+  });
+
+  const inputCls =
+    'w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary';
+
+  const handleSave = () => {
+    if (!form.title.trim()) return alert('Module Name 為必填！');
+    data.onSave(form);
+    setOpen(false);
+  };
+
   return (
     <>
-      <Handle type="target" position={Position.Top}    id="t" />
-      <Dialog.Root>
+      <Handle type="target" position={Position.Top} id="t" />
+      <Handle type="source" position={Position.Bottom} id="s" />
+      <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Trigger asChild>
-          <div className="bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg px-6 py-4 min-w-[200px] max-w-[260px] text-center text-sm shadow break-words cursor-pointer">
-            {data.title || '未命名 Module'}
+          <div
+            className={`rounded-xl border-2 px-8 py-4 min-w-[220px] text-center bg-white cursor-pointer ${
+              selected ? 'border-primary' : 'border-slate-400'
+            }`}
+          >
+            {form.title || '(未命名 Module)'}
           </div>
         </Dialog.Trigger>
 
-        {/* ===== Modal ===== */}
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] bg-white rounded-xl shadow-lg p-6 space-y-4 z-50">
-            <Dialog.Title className="text-xl font-bold mb-4">
-              編輯 Module – {data.id}
-            </Dialog.Title>
+          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40 pointer-events-none" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] bg-white rounded-lg shadow-lg p-6 space-y-5 z-50">
+            <Dialog.Title className="sr-only">編輯 Module</Dialog.Title>
 
-            {[
-              { key:'title',  label:'Module Name*',      tag:'input',    required:true },
-              { key:'details',label:'Detail',            tag:'textarea' },
-              { key:'person', label:'Person in charge',  tag:'input'    },
-              { key:'docs',   label:'Document(URL)',     tag:'input'    },
-            ].map((f)=>(
-              <div key={f.key}>
-                <label className="block font-semibold mb-1">{f.label}</label>
-                {f.tag==='textarea' ? (
-                  <textarea
-                    rows={3}
-                    defaultValue={data[f.key]||''}
-                    onChange={(e)=> data[f.key]=e.target.value}
-                    className="border rounded w-full px-3 py-1.5 resize-none"
-                  />
-                ):(
-                  <input
-                    defaultValue={data[f.key]||''}
-                    onChange={(e)=> data[f.key]=e.target.value}
-                    className="border rounded w-full px-3 py-1.5"
-                  />
-                )}
+            <div className="space-y-4">
+              <div>
+                <label className="block font-semibold mb-1">
+                  Module Name<span className="text-red-600">*</span>
+                </label>
+                <input
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm({ ...form, title: e.target.value })
+                  }
+                  className={inputCls}
+                />
               </div>
-            ))}
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Dialog.Close className="px-4 py-1.5 border rounded hover:bg-gray-100">
-                取消
+              <div>
+                <label className="block font-semibold mb-1">Detail</label>
+                <textarea
+                  rows={3}
+                  value={form.detail}
+                  onChange={(e) =>
+                    setForm({ ...form, detail: e.target.value })
+                  }
+                  className={`${inputCls} resize-none`}
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">
+                  Person in Charge
+                </label>
+                <input
+                  value={form.person}
+                  onChange={(e) =>
+                    setForm({ ...form, person: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-1">
+                  Documents (URL)
+                </label>
+                <input
+                  value={form.docs}
+                  onChange={(e) =>
+                    setForm({ ...form, docs: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
+            {/* footer */}
+            <div className="flex justify-end gap-3 pt-6">
+              <AlertDialog.Root>
+                <AlertDialog.Trigger asChild>
+                  <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">
+                    刪除
+                  </button>
+                </AlertDialog.Trigger>
+                <AlertDialog.Portal>
+                  <AlertDialog.Overlay className="fixed inset-0 bg-black/30 z-50" />
+                  <AlertDialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-white rounded-lg shadow-lg p-6 space-y-5 z-50">
+                    <AlertDialog.Title className="text-lg font-bold">
+                      確認刪除此 Module？
+                    </AlertDialog.Title>
+                    <AlertDialog.Description className="text-sm">
+                      這個動作無法復原。
+                    </AlertDialog.Description>
+                    <div className="flex justify-end gap-3 pt-4">
+                      <AlertDialog.Cancel asChild>
+                        <button className="border px-4 py-1.5 rounded text-sm">
+                          取消
+                        </button>
+                      </AlertDialog.Cancel>
+                      <AlertDialog.Action asChild>
+                        <button
+                          onClick={data.onDelete}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm"
+                        >
+                          確認刪除
+                        </button>
+                      </AlertDialog.Action>
+                    </div>
+                  </AlertDialog.Content>
+                </AlertDialog.Portal>
+              </AlertDialog.Root>
+
+              <Dialog.Close asChild>
+                <button className="border px-4 py-2 rounded text-sm">
+                  取消
+                </button>
               </Dialog.Close>
-              <Dialog.Close
-                className="px-6 py-1.5 bg-primary text-white rounded hover:bg-primary/90"
+              <button
+                onClick={handleSave}
+                className="bg-primary text-white px-6 py-2 rounded text-sm hover:bg-primary/90"
               >
                 儲存
-              </Dialog.Close>
+              </button>
             </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-      <Handle type="source" position={Position.Bottom} id="s" />
     </>
   );
 }
 
-/* ---------- 主要頁面 ---------- */
+/* ──────────── 主頁面 ──────────── */
 export default function ModuleEditPage() {
-  const { id } = useParams();            /* SOP_ID */
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth(); // 取得登入者（302912/Q03）
 
-  /* === 初始空流程 ===   (之後可以改成 fetch 後端流程再 setNodes / setEdges) */
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-  /* React‑Flow 連線 */
+  /* 1.  讀取後端 flowchart */
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/sops/${id}/flowchart`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { data } = await res.json();
+        const { nodes: backendNodes = [], edges: backendEdges = [] } = data;
+
+        /* nodes 轉換 */
+        const rfNodes = backendNodes.map((m, idx) => ({
+          id: m.Module_ID,
+          position: {
+            x: m.x ?? ((idx % 4) * 260 + 80),
+            y: m.y ?? (Math.floor(idx / 4) * 140 + 60),
+          },
+          type: 'step',
+          data: {
+            title: m.Title,
+            detail: m.Details,
+            person: m.staff_in_charge,
+            docs: m.form_links?.[0]?.Link || '',
+            onSave: (form) =>
+              setNodes((prev) =>
+                prev.map((n) =>
+                  n.id === m.Module_ID
+                    ? { ...n, data: { ...n.data, ...form } }
+                    : n
+                )
+              ),
+            onDelete: () => handleDeleteNode(m.Module_ID),
+          },
+        }));
+
+        /* edges 轉換 */
+        const rfEdges = backendEdges.map((e) => ({
+          id: `${e.from_module}-${e.to_module}`,
+          source: e.from_module,
+          target: e.to_module,
+          markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
+          style: { stroke: PRIMARY, strokeWidth: 1.5 },
+        }));
+
+        setNodes(rfNodes);
+        setEdges(rfEdges);
+      } catch (err) {
+        console.error('[ModuleEditPage] 載入流程失敗：', err);
+      }
+    })();
+  }, [id]);
+
+  /* 2. 新增 / 刪除 / 連線 */
+  const handleAddNode = () => {
+    const newId = nanoid(6); // 不以 M 開頭 → 新節點
+    const yMax = nodes.length
+      ? Math.max(...nodes.map((n) => n.position.y))
+      : 0;
+    setNodes((nds) =>
+      nds.concat({
+        id: newId,
+        position: { x: 400, y: yMax + 160 },
+        type: 'step',
+        data: {
+          title: '',
+          detail: '',
+          person: '',
+          docs: '',
+          onSave: (form) =>
+            setNodes((prev) =>
+              prev.map((n) =>
+                n.id === newId ? { ...n, data: { ...n.data, ...form } } : n
+              )
+            ),
+          onDelete: () => handleDeleteNode(newId),
+        },
+      })
+    );
+  };
+
+  const handleDeleteNode = (nodeId) => {
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) =>
+      eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+    );
+  };
+
   const onConnect = useCallback(
     (params) =>
       setEdges((eds) =>
         addEdge(
-          { ...params, markerEnd: { type: MarkerType.ArrowClosed } },
+          {
+            ...params,
+            markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
+            style: { stroke: PRIMARY, strokeWidth: 1.5 },
+          },
           eds
         )
       ),
     [setEdges]
   );
 
-  /* 新增 Module */
-  const handleAddNode = () => {
-    const virtualId = `virtual-${Date.now()}`;          // 產生暫時 ID
-    const newNode = {
-      id: virtualId,
-      type: 'step',
-      position: { x: Math.random() * 600, y: Math.random() * 400 },
-      data: { id: virtualId, title: '' },               // 其它欄位留空
-    };
-    setNodes((nds) => nds.concat(newNode));
-  };
+  const nodeTypes = useMemo(() => ({ step: StepNode }), []);
 
-  /* 刪除 Module（選中再刪） */
-  const handleDeleteSelected = () => {
-    if (nodes.filter((n) => n.selected).length === 0) {
-      alert('請先點選要刪除的 Module');
-      return;
+  /* 3. 儲存至後端 */
+  const handleSave = async () => {
+    try {
+      // modules
+      const modules = nodes.map((n) => {
+        const isNew = !/^M\d+$/.test(n.id); // M開頭=既有
+        return {
+          action: isNew ? 'create' : 'update',
+          Module_ID: n.id,
+          Type: 'process',
+          Title: n.data.title,
+          Details: n.data.detail,
+          staff_in_charge: n.data.person,
+          form_links: n.data.docs ? [{ Link: n.data.docs }] : [],
+          x: n.position.x,
+          y: n.position.y,
+        };
+      });
+
+      // edges
+      const edgesData = edges.map((e) => ({
+        from_module: e.source,
+        to_module: e.target,
+      }));
+
+      const res = await fetch(
+        `${API_BASE}/api/sops/${id}/modules-batch`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            modules,
+            edges: edgesData,
+            Updated_by: user?.name || '302912',
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+
+      alert('儲存成功！');
+      // navigate(-1); // 成功後若要回上一頁就打開
+    } catch (err) {
+      console.error('[ModuleEditPage] 儲存錯誤：', err);
+      alert('儲存失敗，請稍後再試');
     }
-    if (!window.confirm('確定要刪除選取的 Module？')) return;
-    setNodes((nds) => nds.filter((n) => !n.selected));
-    setEdges((eds) => eds.filter((e) => !e.selected && nodes.some((n)=>n.id===e.source || n.id===e.target)));
   };
 
-  /* 儲存流程：TODO 串後端 */
-  const handleSave = () => {
-    const payload = { nodes, edges };
-    console.log('🚀 要送出的流程：', payload);
-    // TODO: 呼叫 POST /api/sops/:id/flowchart 之類的 API
-    alert('已暫存於 console.log\n（等後端 API 完成後改成真正送出）');
-  };
-
-  /* ===== React‑Flow 專用設定 ===== */
-  const nodeTypes = useMemo(()=>({ step: StepNode }),[]);
-
+  /* ──────────── Render ──────────── */
   return (
     <>
       <NavBar />
-
-      {/* 頁首：顯示 SOP 名稱 / 回上一頁 */}
-      <header className="bg-secondary py-8 text-center">
-        <h1 className="text-3xl font-bold text-primary mb-2">
-          編輯 SOP 流程（SOP_ID: {id}）
+      <header className="bg-secondary py-4 text-center">
+        <h1 className="text-2xl font-bold text-primary">
+          編輯 SOP 流程 (SOP_ID: {id})
         </h1>
       </header>
 
-      {/* 主要畫布 */}
-      <main className="px-6 py-10 max-w-7xl mx-auto">
-        <div className="h-[600px] border rounded shadow">
+      <main className="px-6 py-8 max-w-7xl mx-auto">
+        <div className="h-[600px] border rounded shadow-sm">
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            nodeTypes={nodeTypes}
             fitView
+            proOptions={{ hideAttribution: true }}
           >
-            <Background />
+            <Background gap={18} size={1.5} />
             <MiniMap />
             <Controls position="bottom-left" />
           </ReactFlow>
         </div>
 
-        {/* 底部操作列 */}
         <div className="flex justify-center gap-4 mt-6">
           <button
             onClick={() => navigate(-1)}
             className="border px-6 py-2 rounded hover:bg-gray-100"
           >
-            <ArrowLeft className="inline w-4 h-4 mr-1" />
-            回上一頁
+            ← 回上一頁
           </button>
-
           <button
             onClick={handleAddNode}
             className="bg-primary text-white px-6 py-2 rounded hover:bg-primary/90"
           >
             新增 Module
           </button>
-
-          <button
-            onClick={handleDeleteSelected}
-            className="border px-6 py-2 rounded hover:bg-gray-100"
-          >
-            刪除選取
-          </button>
-
           <button
             onClick={handleSave}
             className="bg-primary text-white px-6 py-2 rounded hover:bg-primary/90"
