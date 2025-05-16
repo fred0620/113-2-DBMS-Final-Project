@@ -28,7 +28,7 @@ export default function MySOPList() {
       const qs = new URLSearchParams();
       if (keyword) qs.append('keyword', keyword);
       if (user.department) qs.append('department', user.department);
-      if (user.team) qs.append('team', user.team);
+      if (user.teamName) qs.append('team', user.teamName); // ✅ 傳中文名稱給後端
       qs.append('page', page);
 
       const res = await fetch(`/api/sops/search?${qs.toString()}`);
@@ -40,6 +40,8 @@ export default function MySOPList() {
         title: item.title ?? item.SOP_Name,
         description: item.description ?? item.SOP_Content,
         department: item.department ?? item.Team_in_charge,
+        team: item.team ?? item.Team_in_charge ?? item.department,
+        teamName: item.team ?? item.Team_in_charge, // ✅ 顯示用
       });
 
       const formatted = Array.isArray(result) ? result.map(normalize) : [];
@@ -84,7 +86,7 @@ export default function MySOPList() {
         body: JSON.stringify({
           SOP_Name: newTitle,
           SOP_Content: newDesc,
-          Team_in_charge: user.team,
+          Team_in_charge: user.team, // ⚠ 注意這裡仍須傳 Team_ID 給後端
         }),
       });
 
@@ -116,7 +118,7 @@ export default function MySOPList() {
       <NavBar />
       <header className="bg-secondary py-12 text-center">
         <h1 className="text-3xl font-bold text-primary mb-2">我的 SOP</h1>
-        <p className="text-lg">所屬部門：{user.team}</p>
+        <p className="text-lg">所屬部門：{user.teamName ?? user.team}</p>
 
         <form
           onSubmit={handleSearchSubmit}

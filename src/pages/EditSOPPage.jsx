@@ -2,19 +2,20 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
+import { useAuth } from '../hooks/useAuth'; // 引入模擬使用者
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function EditSOPPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth(); // 取得登入者資訊
 
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [form, setForm] = useState({ title:"", description:"" });
 
   useEffect(() => {
     if (!id) return;
@@ -33,16 +34,8 @@ export default function EditSOPPage() {
 
         console.debug('[EditSOP] flowchart data', data);
 
-        setTitle(
-          data.title ??
-          data.SOP_Name ??
-          '未命名 SOP'
-        );
-        setDesc(
-          data.description ??
-          data.SOP_Content ??
-          ''
-        );
+        setTitle(data.title ?? data.SOP_Name ?? '未命名 SOP');
+        setDesc(data.description ?? data.SOP_Content ?? '');
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('[EditSOP] 讀取失敗：', err);
@@ -61,16 +54,27 @@ export default function EditSOPPage() {
       alert('SOP 名稱為必填');
       return;
     }
+
+    if (!user || authLoading) {
+      alert('使用者資訊尚未載入，請稍後再試');
+      return;
+    }
+
     try {
       setSaving(true);
       const payload = {
         SOP_ID: id,
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
+        Team_in_charge: user.team,       // Q03
+        Updated_by: user.name
       };
 
-      const res = await fetch(`${API_BASE}/api/sops/info`, {
-        method: 'PUT',
+
+      console.log('[送出 payload]', payload);
+
+      const res = await fetch(`${API_BASE}/api/sops/${id}/info`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
