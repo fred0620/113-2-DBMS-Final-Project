@@ -48,7 +48,7 @@ export default function FavoriteSOPPage() {
     <>
       <NavBar />
       <header className="bg-secondary py-12 text-center">
-        <h1 className="text-2xl font-bold text-primary mb-6">我的 SOP 收藏</h1>
+        <h1 className="text-3xl font-bold text-primary mb-2">收藏清單</h1> 
       </header>
 
       <main className="py-10 px-6">

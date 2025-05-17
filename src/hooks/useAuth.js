@@ -4,21 +4,33 @@ export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const loadUserFromStorage = () => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('❌ 無法解析 user:', e);
+        setUser(null);
+      }
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fakeUser = {
-      name: '302912',             // ✅ 改成存在於 Administrator 資料表中的 ID
-      role: 'admin',
-      department: '秘書處',
-      team: 'Q03',                  // ✅ 改成 Team_ID，不是中文名稱
-      teamName: '秘書處第三組',     // ✅ 額外提供顯示用名稱（非必要）
+    loadUserFromStorage();
+
+    // ✅ 監聽 custom event（跨元件通知更新 user 狀態）
+    const handleLogin = () => loadUserFromStorage();
+    window.addEventListener('user-login', handleLogin);
+    window.addEventListener('user-logout', handleLogin);
+
+    return () => {
+      window.removeEventListener('user-login', handleLogin);
+      window.removeEventListener('user-logout', handleLogin);
     };
-
-    const timer = setTimeout(() => {
-      setUser(fakeUser);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
   }, []);
 
   return { user, loading };
