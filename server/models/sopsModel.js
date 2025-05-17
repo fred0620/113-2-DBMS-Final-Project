@@ -125,5 +125,20 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
     conn.release();
   }
 };
+const checkIfSaved = async (sopId, personalId) => {
+  const [rows] = await db.query(
+    'SELECT 1 FROM Save WHERE SOP_ID = ? AND Personal_ID = ?',
+    [sopId, personalId]
+  );
+  return rows.length > 0;
+};
+
+// 實際收藏 SOP
+const saveSopForUser = async (sopId, personalId) => {
+  await db.query(
+    'INSERT INTO Save (SOP_ID, Personal_ID) VALUES (?, ?)',
+    [sopId, personalId]
+  );
+};
 
 module.exports = { getSopById,searchSops,createSop,updateSopinfo };
