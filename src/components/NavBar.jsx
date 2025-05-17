@@ -1,19 +1,21 @@
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { useAuth } from '../hooks/useAuth';
 
 export default function NavBar() {
   const navigate = useNavigate();
-  const loggedIn = !!localStorage.getItem('user');
+  const { user, loading } = useAuth();
+  if (loading) return null;
 
   const handleAuth = () => {
     if (localStorage.getItem('user')) {
       localStorage.removeItem('user'); // 登出
+      window.dispatchEvent(new Event('user-logout'));
     } else {
       navigate('/login'); // 未登入就去登入
     }
-    location.reload(); // 或用狀態刷新頁面
   };
-  
+
 
   return (
     <nav className="w-full bg-gray-100 border-b border-gray-200">
@@ -25,11 +27,30 @@ export default function NavBar() {
 
         <div className="hidden md:flex border rounded-md bg-white/60 backdrop-blur px-1 py-1">
           <Link to="/" className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">首頁</Link>
-          <Link to="/favorites" className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">SOP收藏</Link>
-          <Link to="/mypage" className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">我的SOP</Link>
-          <button onClick={handleAuth} className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">
-            {loggedIn ? '登出' : '登入/註冊'}
-          </button>
+          {user && (
+            <Link to="/favorites" className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">
+              SOP收藏
+            </Link>
+          )}
+
+          {user?.department && (
+            <Link to="/mypage" className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">我的SOP</Link>
+          )}          {user ? (
+            <div className="flex items-center gap-3">
+              <button onClick={handleAuth} className="px-4 py-1 text-center hover:underline whitespace-nowrap">
+                登出
+              </button>
+              <span className="text-gray-700 font-semibold flex items-center gap-1">
+                <i className="bi bi-person-fill"></i> {user.username}
+              </span>
+
+            </div>
+          ) : (
+            <button onClick={handleAuth} className="px-4 py-1 text-center hover:underline whitespace-nowrap">
+              登入/註冊
+            </button>
+          )}
+
         </div>
       </div>
     </nav>

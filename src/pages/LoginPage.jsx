@@ -17,21 +17,33 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
   
-      if (!res.ok) throw new Error('登入失敗，請檢查帳密');
+      if (!res.ok) throw new Error(data.error || data.message || '登入失敗');
   
-      const data = await res.json();         // <- 注意這裡解開整個物件
-      console.log('✅ 後端回傳的整體資料:', data); // ✅ DEBUG 1
+      const data = await res.json();
+      console.log('✅ 後端回傳的整體資料:', data);
   
-      const user = data.user;                // <- 取出 user 欄位
-      console.log('✅ 提取的 user 欄位:', user);   // ✅ DEBUG 2
+      const user = data.user;
+      const detail = user.details?.[0] || {};
   
-      localStorage.setItem('user', JSON.stringify(user));
+      const simplifiedUser = {
+        id: user.id,
+        username: user.User_Name,
+        department: detail.department || '',
+        team: detail.team || '',
+      };
+  
+      console.log('✅ 整理後的 user:', simplifiedUser);
+      localStorage.setItem('user', JSON.stringify(simplifiedUser));
+      window.dispatchEvent(new Event('user-login'));
       navigate('/');
     } catch (err) {
-      console.error('❌ 登入錯誤:', err);     // ✅ DEBUG 3
+      console.error('❌ 登入錯誤:', err);
       setError(err.message);
     }
   };
+  
+  
+  
   
 
   return (
