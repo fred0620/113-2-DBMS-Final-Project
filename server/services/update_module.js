@@ -1,5 +1,5 @@
 // server/services/update_module.js
-const { create_module,update_module } = require('../models/update_module');
+const { create_module,update_module, update_edges } = require('../models/update_module');
 const sopModel = require('../models/sopsModel');
 const db = require('../config/db');
 
@@ -26,6 +26,8 @@ const processModules = async (modules, editor, sopId, version, edges ) => {
     if (create_modules.length > 0) {for (const module of create_modules) {
       const {newModuleId} = await create_module(module,editor, sopId, version, connection); // 假設這是你處理插入的函數
       clientIdToModuleIdMap[module.Module_ID] = newModuleId;
+      console.log("Mapping client id", module.Module_ID, "to DB id", newModuleId);
+
       }
     }  
   
@@ -39,7 +41,7 @@ const processModules = async (modules, editor, sopId, version, edges ) => {
 
     
     await connection.commit();    // ✅ 提交交易
-    
+    console.log("✅ Transaction committed");
 
     return {
       success: true,
@@ -47,6 +49,7 @@ const processModules = async (modules, editor, sopId, version, edges ) => {
     };
   } catch (error) {
         await connection.rollback(); // 回滾
+        console.error("❌ Transaction rolled back:", error.message);
         throw error;
     } finally {
     connection.release();
