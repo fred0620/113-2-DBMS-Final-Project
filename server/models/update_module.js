@@ -1,7 +1,7 @@
 // server/models/update_module.js
 const db=require('../config/db')
 
-const update_edges = async (edges,version) => {
+const update_edges = async (edges,version, connection) => {
     
     // 準備插入的資料
     const insEdges = edges.map(edge => [
@@ -9,14 +9,17 @@ const update_edges = async (edges,version) => {
         edge.to_module,    // to_module
         version            // version
     ]);
+
+    const placeholders = insEdges.map(() => '(?,?,?)').join(',');
+    const flatValues = insEdges.flat();
     
-    await db.execute(`
+    await connection.execute(`
         insert into Edges (from_module, to_module, Version_Edge)
-        values ?
-        `,[insEdges])
+        values ${placeholders}
+        `, flatValues)
 };
 
-const create_module = async (module,editor, sopId, version) => {
+const create_module = async (module,editor, sopId, version, connection) => {
     try {
       
       const values =  [
@@ -31,29 +34,35 @@ const create_module = async (module,editor, sopId, version) => {
       ];
       
       // 2. Insert到Module
-      const [result] = await db.execute(`
+      const [result] = await connection.execute(`
         INSERT INTO Module (Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by, Action)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?);
       `, values);
-      
+      console.log("⚙️ insert result:", values);
+      // 立刻查剛剛那筆的 Module_ID
+      const [rows] = await connection.execute(`
+        SELECT Module_ID FROM Module WHERE Title = ? AND SOP_ID = ? AND Version=? AND Update_by=? ORDER BY Module_ID DESC LIMIT 1;
+      `, [module.Title, sopId, version,editor]);
+
+      console.log("⚙️ ModuleID:", rows);
       //這組資料新創的id
-      const newModuleId = result.insertId;
+      const newModuleId = rows[0].Module_ID;
 
       // 3. Insert到Link
       if (module.form_links && Array.isArray(module.form_links) && module.form_links.length > 0) {
         const formLinkValues = module.form_links
-          .filter(linkObj => Array.isArray(linkObj.Link) && linkObj.Link.length > 0) // 確保 linkObj.Link 是陣列
-          .flatMap(linkObj => linkObj.Link.map(link => [
+          .filter(linkObj => typeof linkObj.Link === 'string' && linkObj.Link.length > 0)
+          .map(linkObj => [
             newModuleId,
-            link,
+            linkObj.Link,
             version
-          ]));
+          ]);
       
         if (formLinkValues.length > 0) {
-          await db.query(`
+          await connection.execute(`
             INSERT INTO Form_Link (Module_ID, Link, Version_Link)
-            VALUES ?
-          `, [formLinkValues]);
+            VALUES ${formLinkValues.map(() => '(?,?,?)').join(',')}
+          `, formLinkValues.flat());
         }
       }
 
@@ -73,7 +82,7 @@ const create_module = async (module,editor, sopId, version) => {
     }
   };
   
-  const update_module = async (modules,editor, sopId, version) => {
+  const update_module = async (modules,editor, sopId, version, connection) => {
     try {
       const clientIdToModuleIdMap = {};
       
@@ -94,7 +103,7 @@ const create_module = async (module,editor, sopId, version) => {
       const flatValues = values.flat();
 
       // 2. Insert到Module
-      await db.execute(`
+      await connection.execute(`
         INSERT INTO Module (Module_ID, Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by, Action)
         VALUES ${placeholders};
       `, flatValues);
@@ -104,12 +113,12 @@ const create_module = async (module,editor, sopId, version) => {
       const formLinkValues = modules.reduce((acc, module) => {
         if (module.form_links && Array.isArray(module.form_links) && module.form_links.length > 0) {
           const links = module.form_links
-            .filter(linkObj => Array.isArray(linkObj.Link) && linkObj.Link.length > 0)
-            .flatMap(linkObj => linkObj.Link.map(link => [
+            .filter(linkObj => typeof linkObj.Link === 'string' && linkObj.Link.length > 0)
+            .map(linkObj => [
               module.Module_ID,
-              link,
+              linkObj.Link,
               version
-            ]));
+            ]);
           acc.push(...links);
         }
         return acc;
@@ -118,7 +127,7 @@ const create_module = async (module,editor, sopId, version) => {
   
       // 4. 如果有 form_links 資料，批量插入到 Form_Link 表
       if (formLinkValues.length > 0) {
-        await db.query(`
+        await connection.query(`
           INSERT INTO Form_Link (Module_ID, Link, Version_Link)
           VALUES ?
         `, [formLinkValues]);
