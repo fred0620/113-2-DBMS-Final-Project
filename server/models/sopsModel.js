@@ -142,4 +142,4 @@ const checkIfSaved = async (sopId, personalId) => {
   );
  };
  
-module.exports = { getSopById,searchSops,createSop,updateSopinfo,saveSopForUser};
+module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser};
