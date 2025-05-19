@@ -10,9 +10,7 @@ const recordModules = async (req, res) => {
 
     try {
       // 將資料傳遞給 Service 層進行處理
-      const result = await processModules(modules, Updated_by,sopId, version );
-      const edges_v2= await transformEdges(edges, result.clientIdToModuleIdMap);
-      await update_edges(edges_v2, version)
+      const result = await processModules(modules, Updated_by,sopId, version, edges );
 
       // 返回成功的回應
       return res.status(200).json(result);  // 200 表示成功
