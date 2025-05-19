@@ -21,5 +21,6 @@ router.post('/:sop_id/modules-batch', recordModules);
 
 const { update_publish } = require('../controllers/publish');
 router.put('/:sop_id/update_publish', update_publish);
+router.post('/unsave', sopsController.unsaveSop);
 
 module.exports = router;

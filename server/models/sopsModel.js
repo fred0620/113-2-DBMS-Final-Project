@@ -141,5 +141,10 @@ const checkIfSaved = async (sopId, personalId) => {
     [sopId, personalId]
   );
  };
- 
-module.exports = { getSopById,searchSops,createSop,updateSopinfo,saveSopForUser};
+ const unsaveSopForUser = async (sopId, personalId) => {
+  await db.query(
+    'DELETE FROM Save WHERE SOP_ID = ? AND Personal_ID = ?',
+    [sopId, personalId]
+  );
+};
+module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser};

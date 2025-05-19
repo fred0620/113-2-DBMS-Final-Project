@@ -213,11 +213,37 @@ const saveSop = async (req, res) => {
     });
   }
  };
- 
+ const unsaveSop = async (req, res) => {
+  const { SOP_ID, Personal_ID } = req.body;
+
+  if (!SOP_ID || !Personal_ID) {
+    return res.status(400).json({
+      status: 'error',
+      message: '缺少 SOP_ID 或 Personal_ID',
+      code: 400
+    });
+  }
+
+  try {
+    await sopModel.unsaveSopForUser(SOP_ID, Personal_ID); // 無論存不存在都刪
+    res.status(200).json({
+      status: 'success',
+      message: '資料已成功取消收藏。',
+      code: 200
+    });
+  } catch (err) {
+    console.error('[UNSAVE_SOP_ERROR]', err);
+    res.status(500).json({
+      status: 'error',
+      message: '伺服器錯誤',
+      code: 500
+    });
+  }
+};
  
  
 
 
 
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop   };
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop  };
 
