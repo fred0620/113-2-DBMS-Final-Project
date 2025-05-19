@@ -8,7 +8,7 @@ const getSopVersion = async (sopId) => {
     if (sopData && sopData.version) {
       return sopData.version + 1;
     } else {
-      throw new Error('SOP or version not found');
+      return 1;
     }
 };
 
