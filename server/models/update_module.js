@@ -38,9 +38,15 @@ const create_module = async (module,editor, sopId, version, connection) => {
         INSERT INTO Module (Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by, Action)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?);
       `, values);
-      
+      console.log("⚙️ insert result:", values);
+      // 立刻查剛剛那筆的 Module_ID
+      const [rows] = await connection.execute(`
+        SELECT Module_ID FROM Module WHERE Title = ? AND SOP_ID = ? AND Version=? AND Update_by=? ORDER BY Module_ID DESC LIMIT 1;
+      `, [module.Title, sopId, version,editor]);
+
+      console.log("⚙️ ModuleID:", rows);
       //這組資料新創的id
-      const newModuleId = result.insertId;
+      const newModuleId = rows[0].Module_ID;
 
       // 3. Insert到Link
       if (module.form_links && Array.isArray(module.form_links) && module.form_links.length > 0) {
@@ -76,7 +82,7 @@ const create_module = async (module,editor, sopId, version, connection) => {
     }
   };
   
-  const update_module = async (modules,editor, sopId, version) => {
+  const update_module = async (modules,editor, sopId, version, connection) => {
     try {
       const clientIdToModuleIdMap = {};
       
