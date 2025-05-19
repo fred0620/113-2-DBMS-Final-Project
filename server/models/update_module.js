@@ -26,13 +26,14 @@ const create_module = async (module,editor, sopId, version) => {
         sopId,
         module.staff_in_charge,
         version,
-        editor
+        editor,
+        module.action
       ];
       
       // 2. Insert到Module
       const [result] = await db.execute(`
-        INSERT INTO Module (Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO Module (Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by, Action)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
       `, values);
       
       //這組資料新創的id
@@ -85,15 +86,16 @@ const create_module = async (module,editor, sopId, version) => {
         sopId,
         module.staff_in_charge,
         version,
-        editor
+        editor,
+        module.action
       ]);
       
-      const placeholders = modules.map(() => '(?,?,?,?,?,?,?,?)').join(',');
+      const placeholders = modules.map(() => '(?,?,?,?,?,?,?,?,?)').join(',');
       const flatValues = values.flat();
 
       // 2. Insert到Module
       await db.execute(`
-        INSERT INTO Module (Module_ID, Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by)
+        INSERT INTO Module (Module_ID, Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by, Action)
         VALUES ${placeholders};
       `, flatValues);
       

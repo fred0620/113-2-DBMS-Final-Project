@@ -2,7 +2,7 @@ const db=require('../config/db')
 
 const getSopById = async (sopId) => {
   // 查 SOP 主資料
-  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, SOP_Content, Create_Time
+  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, Location, SOP_Content, Create_Time
     FROM SOP, Team 
     WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
   if (!sop) return null;
