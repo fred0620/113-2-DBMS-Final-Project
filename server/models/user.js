@@ -5,7 +5,7 @@ const checkUserByEmail = async (email) => {
         SELECT Personal_ID, User_Name , Password
         FROM User 
         WHERE Email = ?`, [email]);
-    return rows;
+    return rows[0];
   };
   
   module.exports = { checkUserByEmail };

@@ -16,15 +16,14 @@ export default function SearchResultPage() {
   const pageSize = 8;
   const totalPages = Math.ceil(total / pageSize);
 
-  // 🔥 這個負責打後端 API
-  async function fetchData({ keyword, dept, group, page = 1 }) {
+  // 🔥 打後端 API（一次拿全部資料，前端分頁）
+  async function fetchData({ keyword, dept, group }) {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
       if (keyword) queryParams.append('keyword', keyword);
       if (dept) queryParams.append('department', dept);
       if (group) queryParams.append('team', group);
-      queryParams.append('page', page);
 
       const url = `/api/sops/search?${queryParams.toString()}`;
       console.log('打到的完整 URL:', url);
@@ -37,9 +36,9 @@ export default function SearchResultPage() {
       const result = await response.json();
       console.log('後端回傳的資料 result =', JSON.stringify(result, null, 2));
 
-      setSops(result);
-      setTotal(result.length);
-      setCurrentPage(page);
+      setSops(result);              // 存全部資料
+      setTotal(result.length);      // 用全部資料長度計算總數
+      setCurrentPage(page);            // 搜尋結果從第 1 頁開始
     } catch (error) {
       console.error('fetch 錯誤:', error);
     } finally {
@@ -47,38 +46,38 @@ export default function SearchResultPage() {
     }
   }
 
-  // 🔥 這個是 SearchBar 按搜尋時呼叫的
+  // 🔍 使用者點搜尋時
   const handleSearch = (keyword, dept, group) => {
-    console.log('handleSearch被呼叫，參數:', keyword, dept, group);
-    setCurrentPage(1); // 搜尋時回到第一頁
     const query = new URLSearchParams({ keyword, dept, group, page: 1 }).toString();
     navigate(`/search?${query}`);
   };
 
-  // 🔥 這個是分頁按鈕用的
+  // 🔄 換頁
   const goToPage = (page) => {
     const params = new URLSearchParams(location.search);
     const keyword = params.get('keyword') || '';
     const dept = params.get('dept') || '';
     const group = params.get('group') || '';
-
     const query = new URLSearchParams({ keyword, dept, group, page }).toString();
     navigate(`/search?${query}`);
   };
 
-  // 🔥 這個是監聽網址變化
+  // 🔁 每次網址變化時（如搜尋、換頁）
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const keyword = params.get('keyword') || '';
     const dept = params.get('dept') || '';
     const group = params.get('group') || '';
     const page = parseInt(params.get('page')) || 1;
-    console.log('useEffect被觸發，參數是：', { keyword, dept, group, page });
-  
-    // 不用判斷，直接 fetchData！
-    fetchData({ keyword, dept, group, page });
+
+    fetchData({ keyword, dept, group });
+    setCurrentPage(page); // 同步目前頁碼
   }, [location.search]);
-  
+
+  // ✂️ 前端切頁（slice）
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const visibleSops = sops.slice(startIndex, endIndex);
 
   return (
     <>
@@ -88,13 +87,11 @@ export default function SearchResultPage() {
         <h1 className="text-2xl font-bold text-primary mb-6">
           政大SOP整合系統 NCCU SOP Center
         </h1>
-
-        {/* 🔥 改這裡，傳 onSearch 進 SearchBar */}
         <SearchBar
           defaultKeyword={new URLSearchParams(location.search).get('keyword') || ''}
           defaultDept={new URLSearchParams(location.search).get('dept') || ''}
           defaultGroup={new URLSearchParams(location.search).get('group') || ''}
-          onSearch={handleSearch} // ⭐⭐ 把這個傳進去
+          onSearch={handleSearch}
         />
       </header>
 
@@ -104,8 +101,8 @@ export default function SearchResultPage() {
             <div className="col-span-full text-center text-gray-500 py-16">
               載入中...
             </div>
-          ) : sops.length > 0 ? (
-            sops.map((sop) => (
+          ) : visibleSops.length > 0 ? (
+            visibleSops.map((sop) => (
               <SOPCard key={sop.id} sop={sop} />
             ))
           ) : (

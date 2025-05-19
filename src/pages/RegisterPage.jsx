@@ -12,6 +12,8 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     try {
+      console.log('📤 發送註冊資料:', { email, username, password }); // DEBUG 1
+  
       const res = await fetch('/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -19,16 +21,19 @@ export default function RegisterPage() {
       });
   
       const data = await res.json();
+      console.log('✅ 後端回傳資料:', data); // DEBUG 2
   
-      if (!res.ok) throw new Error(data.message || '註冊失敗');
+      if (!res.ok) throw new Error(data.error || data.message || '註冊失敗');
+
   
-      localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/');
+    navigate('/login'); 
+
     } catch (err) {
-      console.error('註冊失敗：', err);
+      console.error('❌ 註冊失敗：', err); // DEBUG 3
       setError(err.message);
     }
   };
+  
   
 
   return (

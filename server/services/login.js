@@ -4,7 +4,7 @@ const studentM = require('../models/stu');
 //const bcrypt = require('bcrypt'); // 密碼比對
 
 const login = async (email, password) => {
-  const user = await userModel.findUserByEmail(email);
+  const user = await userM.checkUserByEmail(email);
   if (!user) {
     throw new Error('User not found');
   }

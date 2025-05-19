@@ -15,6 +15,7 @@
     "@radix-ui/react-alert-dialog": "^1.1.13",
     "@radix-ui/react-dialog": "^1.1.11",
     "axios": "^1.9.0",
+    "bootstrap-icons": "^1.13.1",
     "lucide-react": "^0.503.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
