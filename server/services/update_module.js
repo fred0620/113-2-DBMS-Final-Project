@@ -1,7 +1,7 @@
 // server/services/update_module.js
 const { create_module,update_module } = require('../models/update_module');
 const sopModel = require('../models/sopsModel');
-
+const db = require('../config/db');
 
 const getSopVersion = async (sopId) => {
     const sopData = await sopModel.getSopById(sopId);
@@ -12,30 +12,45 @@ const getSopVersion = async (sopId) => {
     }
 };
 
-const processModules = async (modules, editor, sopId, version ) => {
+const processModules = async (modules, editor, sopId, version, edges ) => {
+    const connection = await db.getConnection();
+    await connection.beginTransaction(); // 開啟交易
+  try {
     const clientIdToModuleIdMap = {};  // 用來儲存 client_id 和 Module_ID 的對照
 
     // 分割為 create 和 update
     const create_modules = modules.filter(module => module.action === 'create');
-    const update_modules = modules.filter(module => module.action !== 'update');
+    const update_modules = modules.filter(module => module.action !== 'create');
   
     // 1. 處理 create_modules 插入資料
     if (create_modules.length > 0) {for (const module of create_modules) {
-      const newModuleId = await create_module(module, sopId, version); // 假設這是你處理插入的函數
+      const {newModuleId} = await create_module(module,editor, sopId, version, connection); // 假設這是你處理插入的函數
       clientIdToModuleIdMap[module.Module_ID] = newModuleId;
       }
     }  
   
     // 2. 處理 update_modules 更新資料
     if (update_modules.length > 0) {
-      await update_module(update_modules,editor, sopId, version); // 假設這是你處理更新的函數
+      await update_module(update_modules,editor, sopId, version, connection); // 假設這是你處理更新的函數
     }
-  
+    
+    const edges_v2= await transformEdges(edges, clientIdToModuleIdMap);
+    await update_edges(edges_v2, version, connection)
+
+    
+    await connection.commit();    // ✅ 提交交易
+    
+
     return {
       success: true,
-      message: 'Modules processed successfully',
-      clientIdToModuleIdMap
+      message: 'Modules and edges processed successfully'
     };
+  } catch (error) {
+        await connection.rollback(); // 回滾
+        throw error;
+    } finally {
+    connection.release();
+  }
 };
 
 const transformEdges = (edges, clientIdToModuleIdMap) => {
