@@ -17,6 +17,7 @@
     "axios": "^1.9.0",
     "bootstrap-icons": "^1.13.1",
     "lucide-react": "^0.503.0",
+    "nanoid": "^5.1.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.50.1",
