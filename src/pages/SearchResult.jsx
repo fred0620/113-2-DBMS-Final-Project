@@ -38,7 +38,6 @@ export default function SearchResultPage() {
 
       setSops(result);              // 存全部資料
       setTotal(result.length);      // 用全部資料長度計算總數
-      setCurrentPage(page);            // 搜尋結果從第 1 頁開始
     } catch (error) {
       console.error('fetch 錯誤:', error);
     } finally {
