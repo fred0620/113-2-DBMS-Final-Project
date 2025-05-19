@@ -18,14 +18,15 @@ const getSopById = async (sopId) => {
     SELECT  from_module, to_module
     FROM Edges
     Where Version_Edge=?
-    ORDER BY Edge_ID ASC;`, [version.New_Version]);
+    ORDER BY Edge_ID ASC;`, [version.New_Version, sopId]);
 
   //查 Module
   const [module] = await db.execute(`
     SELECT Module_ID,  Title, Details,  staff_in_charge, type
     FROM Module
     Where Version=?
-    ORDER BY Module_ID ASC;`, [version.New_Version]);
+    AND SOP_ID =?
+    ORDER BY Module_ID ASC;`, [version.New_Version, sopId]);
 
   return {sop, version: version.New_Version, edges, module};
 };

@@ -10,7 +10,7 @@ const getSopPage = async (req, res) => {
   try {
         
     // 取得 SOP 資料（nodes + edges）
-    const {sop,  edges, module} = await sopModel.getSopById(sopId);
+    const {sop,  edges, module, version} = await sopModel.getSopById(sopId);
     if (!sop) {
       return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
     }
@@ -25,6 +25,7 @@ const getSopPage = async (req, res) => {
       edges:edges},
       message: `You viewed SOP ${sopId}`,
       views: viewCount,
+      version: version
     });
   } catch (err) {
     console.error(`[SOP_ERROR] Failed to load SOP ${sopId}:`, err.message);
