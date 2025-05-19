@@ -21,4 +21,13 @@ promisePool.query('SELECT 1')
     console.error('❌ MySQL 連線失敗：', err);
   });
 
-module.exports = promisePool;
+// getConnection 函式，取得 connection 物件，用於 transaction
+const getConnection = () => {
+  return pool.promise().getConnection();
+};
+
+module.exports = {
+  execute: (...args) => promisePool.execute(...args),
+  query: (...args) => promisePool.query(...args),
+  getConnection
+};
