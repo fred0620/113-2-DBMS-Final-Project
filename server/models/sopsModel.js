@@ -45,7 +45,7 @@ const searchSops = async (keyword, department, team) => {
   WHERE 1=1 AND is_publish='publish'
 `;
 
-  console.log('Generated SQL Query:', query);
+  
 const values = [];
 
   if (keyword) {
@@ -62,14 +62,12 @@ const values = [];
     query += ` AND Team.Team_Name = ?`;
     values.push(team);
   }
-  console.log("Generated SQL Query:", query);
-  console.log('Query Values:', values);
+
   const [rows] = await db.execute(query, values);
-  console.log('Database query result:', rows);
   return rows;
   
 };
-// server/models/sopsModel.js （片段）
+
 const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
 
   const [insertResult] = await db.query(
@@ -96,8 +94,6 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
-
-   
     await conn.execute(
       `UPDATE SOP 
        SET SOP_Name = ?, SOP_Content = ?, Team_in_charge = ? 

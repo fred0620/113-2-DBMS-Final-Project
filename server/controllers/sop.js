@@ -34,26 +34,68 @@ const getSopPage = async (req, res) => {
     });
   }
 };
-const searchSops = async (req, res) => {
-  let keyword = (req.query.keyword || '').trim();
-  
-  // 解碼 URL 中的關鍵字參數，確保編碼正確
-  
-  console.log('Received keyword:',keyword);
 
+const searchSops = async (req, res) => {
+  const keyword = (req.query.keyword || '').trim();
   const department = req.query.department || '';
   const team = req.query.team || '';
+  const autocomplete = req.query.autocomplete || '';
 
-  console.log('Search Parameters:', { keyword, department, team });
+  console.log('Search Parameters:', { keyword, department, team, autocomplete });
 
   try {
+    if (autocomplete === 'department') {
+      const [rows] = await db.query(
+        'SELECT Department_ID, Department_Name FROM Department WHERE Department_Name LIKE ? ORDER BY Department_Name',
+        [`%${keyword}%`]
+      );
+
+      const result = rows.map(row => ({
+        id: row.Department_ID,
+        title: row.Department_Name,
+        description: null,
+        department: row.Department_Name,
+        team: null,
+        owner: null
+      }));
+
+      return res.json(result);
+    }
+
+    if (autocomplete === 'team') {
+      const [rows] = await db.query(
+        'SELECT Team_ID, Team_Name FROM Team WHERE Team_Name LIKE ? ORDER BY Team_Name',
+        [`%${keyword}%`]
+      );
+
+      const result = rows.map(row => ({
+        id: row.Team_ID,
+        title: row.Team_Name,
+        description: null,
+        department: null,
+        team: row.Team_Name,
+        owner: null
+      }));
+
+      return res.json(result);
+    }
+
+
     const sops = await sopModel.searchSops(keyword, department, team);
-    res.json(sops);
+    return res.json(sops);
+
   } catch (err) {
     console.error('[SOP_ERROR] Failed to search SOPs:', err.message);
     res.status(500).json({ error: 'Internal Server Error', detail: err.message });
   }
 };
+
+module.exports = {
+  searchSops,
+  // ...其他函式（getSopPage, createSOP 等）
+};
+
+
 const createSOP = async (req, res, next) => {
   console.log('req.body =', req.body);
   try {
