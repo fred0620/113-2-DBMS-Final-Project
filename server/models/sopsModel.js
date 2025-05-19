@@ -42,7 +42,7 @@ const searchSops = async (keyword, department, team) => {
   FROM SOP
   LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_id
   LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
-  WHERE 1=1
+  WHERE 1=1 AND is_publish='publish'
 `;
 
   console.log('Generated SQL Query:', query);
