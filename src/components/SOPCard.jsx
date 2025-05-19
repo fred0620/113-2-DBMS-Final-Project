@@ -24,7 +24,9 @@ export default function SOPCard({ sop, editable = false, showUnfavorite = false,
         <div className="space-y-1 text-sm text-gray-700">
           <div className="flex items-center gap-2">
             <Briefcase className="w-4 h-4 text-gray-500" />
-            <span>所屬部門：{sop.team}</span>
+            <span>
+              所屬部門：{sop.team ?? sop.department ?? sop.Team_Name ?? sop.Team_in_charge ?? '（無資料）'}
+            </span>
           </div>
         </div>
       </div>
@@ -49,12 +51,11 @@ export default function SOPCard({ sop, editable = false, showUnfavorite = false,
 
         {showUnfavorite && (
           <button
-          onClick={() => onUnfavorite(sop.id)}
-          className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
-        >
-          取消收藏
-        </button>
-        
+            onClick={() => onUnfavorite(sop.id)}
+            className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
+          >
+            取消收藏
+          </button>
         )}
       </div>
     </div>
