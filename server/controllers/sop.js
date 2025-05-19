@@ -172,9 +172,52 @@ const updateSopinfo = async (req, res, next) => {
     next(err);
   }
 };
+const saveSop = async (req, res) => {
+  const { SOP_ID, Personal_ID } = req.body;
+ 
+ 
+  if (!SOP_ID || !Personal_ID) {
+    return res.status(400).json({
+      status: 'error',
+      message: '缺少 SOP_ID 或 Personal_ID',
+      code: 400
+    });
+  }
+ 
+ 
+  try {
+    const alreadySaved = await sopModel.checkIfSaved(SOP_ID, Personal_ID);
+    if (alreadySaved) {
+      return res.status(200).json({
+        status: 'success',
+        message: '資料已成功儲存。',
+        code: 200
+      });
+    }
+ 
+ 
+    await sopModel.saveSopForUser(SOP_ID, Personal_ID);
+ 
+ 
+    res.status(200).json({
+      status: 'success',
+      message: '資料已成功儲存。',
+      code: 200
+    });
+  } catch (err) {
+    console.error('[SAVE_SOP_ERROR]', err);
+    res.status(500).json({
+      status: 'error',
+      message: '伺服器錯誤',
+      code: 500
+    });
+  }
+ };
+ 
+ 
+ 
 
 
 
-
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo   };
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop   };
 
