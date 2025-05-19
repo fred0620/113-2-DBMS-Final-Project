@@ -13,21 +13,29 @@ const getSopById = async (sopId) => {
     WHERE SOP_ID = ?`, [sopId]);
   if (!version?.New_Version)  return null;
 
-  // 查 edges
-  const [edges] = await db.execute(`
-    SELECT  from_module, to_module
-    FROM Edges
-    Where Version_Edge=?
-    ORDER BY Edge_ID ASC;`, [version.New_Version]);
-
   //查 Module
   const [module] = await db.execute(`
     SELECT Module_ID,  Title, Details,  staff_in_charge, type
     FROM Module
     Where Version=?
-    ORDER BY Module_ID ASC;`, [version.New_Version]);
+    AND SOP_ID =?
+    ORDER BY Module_ID ASC;`, [version.New_Version, sopId]);
 
-  return {sop, version: version.New_Version, edges, module};
+  // 把 Module_ID 做成陣列
+  const moduleIds = module.map(m => m.Module_ID);
+  
+  const placeholders = moduleIds.map(() => '?').join(',');
+
+  // 查 edges
+  const [edges] = await db.execute(`
+    SELECT  from_module, to_module
+    FROM Edges
+    Where Version_Edge=?
+    AND (from_module IN (${placeholders}) OR to_module IN (${placeholders}))
+    ORDER BY Edge_ID ASC;`, [version.New_Version, ...moduleIds, ...moduleIds]);
+
+  
+  return {sop, version: version.New_Version, module, edges};
 };
 const searchSops = async (keyword, department, team) => {
   
@@ -137,6 +145,7 @@ const checkIfSaved = async (sopId, personalId) => {
     [sopId, personalId]
   );
  };
+
  const unsaveSopForUser = async (sopId, personalId) => {
   await db.query(
     'DELETE FROM Save WHERE SOP_ID = ? AND Personal_ID = ?',
