@@ -3,18 +3,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import Footer from "../components/Footer";
 import { ArrowLeft } from "lucide-react";
-import ReactFlow, { Controls, MarkerType } from "reactflow";
+import ReactFlow, { MarkerType } from "reactflow";
 import "reactflow/dist/style.css";
 import StepNodeView from "../components/StepNodeView";
 import dagre from "dagre";
 
-/* ---------- layout helper ---------- */
 const NODE_W = 240;
 const NODE_H = 80;
 
 function layout(nodes, edges, dir = "TB") {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: dir, nodesep: 120, ranksep: 90 });
+  g.setGraph({ rankdir: dir, nodesep: 120, ranksep: 100 });
   g.setDefaultEdgeLabel(() => ({}));
   nodes.forEach(n => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
   edges.forEach(e => g.setEdge(e.source, e.target));
@@ -32,9 +31,8 @@ function layout(nodes, edges, dir = "TB") {
   };
 }
 
-/* ---------- React component ---------- */
 export default function ModulePage() {
-  const { id } = useParams(); // SOP_ID
+  const { id } = useParams();
   const nav = useNavigate();
   const [sop, setSop] = useState(null);
   const [collected, setCollected] = useState(false);
@@ -42,11 +40,9 @@ export default function ModulePage() {
   useEffect(() => {
     (async () => {
       try {
-        console.log("收到的 id：", id);
         const res = await fetch(`/api/sops/${id}/flowchart`);
         if (!res.ok) throw new Error("fetch fail");
         const { data } = await res.json();
-        console.log("收到的 data：", data);
         setSop({ raw: data });
       } catch (err) {
         console.error("[ModulePage] 取得 SOP 失敗:", err);
@@ -65,10 +61,15 @@ export default function ModulePage() {
         brief: n.Title.length > 26 ? n.Title.slice(0, 23) + "…" : n.Title,
         details: n.Details,
         person: n.staff_in_charge,
+        personName: n.User_Name,
         docs: n.docs || [],
         type: n.type,
       },
       position: { x: 0, y: 0 },
+      style: {
+        width: NODE_W,
+        height: NODE_H,
+      },
       draggable: false,
     }));
 
@@ -76,7 +77,7 @@ export default function ModulePage() {
       id: `${e.from_module}-${e.to_module}`,
       source: e.from_module,
       target: e.to_module,
-      type: "step",
+      type: "straight",
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 20,
@@ -128,17 +129,18 @@ export default function ModulePage() {
             <p className="mt-1"><strong>最後編輯時間：</strong>{formatDate(info.Create_Time)}</p>
             <p className="mt-1"><strong>SOP 瀏覽次數：</strong>{info.views ?? "（無資料）"}</p>
           </aside>
-          <section className="flex-1 h-[650px] border rounded shadow overflow-auto bg-[#f9fafb]">
-            <ReactFlow
-              nodes={rfData.nodes}
-              edges={rfData.edges}
-              nodeTypes={nodeTypes}
-              defaultEdgeOptions={{ type: "step" }}
-              fitView
-              proOptions={{ hideAttribution: true }}
-            >
-              <Controls position="bottom-left" />
-            </ReactFlow>
+          <section className="flex-1 min-h-[850px] bg-white overflow-visible">
+            <div className="relative w-full h-[1200px]">
+              <ReactFlow
+                nodes={rfData.nodes}
+                edges={rfData.edges}
+                nodeTypes={nodeTypes}
+                fitView
+                panOnScroll
+                fitViewOptions={{ padding: 0.3 }}
+                proOptions={{ hideAttribution: true }}
+              />
+            </div>
           </section>
         </div>
         <div className="flex justify-center gap-6 mt-12 mb-20">
