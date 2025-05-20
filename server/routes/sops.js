@@ -16,11 +16,16 @@ router.patch('/:sop_id/info', ctrl.updateSopinfo);
 router.post('/save', ctrl.saveSop);
 
 
-const { recordModules } = require('../controllers/update_module');
-router.post('/:sop_id/modules-batch', recordModules);
+const update = require('../controllers/update_module');
+router.post('/:sop_id/modules-batch', update.recordModules);
 
 const { update_publish } = require('../controllers/publish');
 router.put('/:sop_id/update_publish', update_publish);
 router.post('/unsave', ctrl.unsaveSop);
+
+//Version control
+router.get('/:sop_id/history', ctrl.historylist);
+router.get('/:sop_id/history/:version', ctrl.displayhistory);
+router.post('/:sop_id/recover/:version', update.recoversop);
 
 module.exports = router;
