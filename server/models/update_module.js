@@ -148,7 +148,125 @@ const create_module = async (module,editor, sopId, version, connection) => {
     }
   };
 
+const recoverSopVersion = async (sopId, version, createdBy) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Step 2: 找最新版本號
+    const [[{ maxVersion }]] = await connection.query(
+      'SELECT MAX(Version) AS maxVersion FROM Module WHERE SOP_ID = ?',
+      [sopId]
+    );
+    const newVersion = (maxVersion || 0) + 1;
+
+    const logText = `Recover to V${version}`;
+    await connection.execute(
+        `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
+        VALUES (?,?,?)`,
+        [sopId, createdBy, logText]
+      );
+    
+    // Step 1: 抓該版本的所有 module 資料
+    const [oldModules] = await connection.query(
+      `SELECT Module_ID, type,  Title, Details,  staff_in_charge
+      FROM Module 
+      WHERE SOP_ID = ? 
+      AND Version = ?`,
+      [sopId, version]
+    );
+
+    if (oldModules.length === 0) {
+      throw new Error('SOP_ID  Version no data');
+    }
+
+    // 把 Module_ID 做成陣列
+    const moduleIds = oldModules.map(m => m.Module_ID);
+    
+    const placeholders = moduleIds.map(() => '?').join(',');
+
+    // 查 edges
+    const [edges] = await connection.execute(`
+      SELECT  from_module, to_module
+      FROM Edges
+      Where Version_Edge=?
+      AND (from_module IN (${placeholders}) OR to_module IN (${placeholders}))
+      ORDER BY Edge_ID ASC;`, [version, ...moduleIds, ...moduleIds]);
+    
+    if (edges.length === 0) {
+      throw new Error('edges are nothing');
+    }
+
+
+    // 查 Form_Link
+      const [link] = await connection.execute(`
+        SELECT  Module_ID, Link, Link_Name
+        FROM Form_Link
+        Where Version_Link=?
+        AND (Module_ID IN (${placeholders}))
+        ORDER BY Link_ID ASC;`, [version, ...moduleIds]);
+
+    // Step 3: 批次複製舊資料，改版本號 → 插入新資料
+    const insertValues = oldModules.map(row => [
+      row.Module_ID,
+      row.type,
+      row.Title,
+      row.Details,
+      sopId,
+      row.staff_in_charge,
+      newVersion,          
+      createdBy,
+      'recover'
+    ]);
+
+    await connection.query(
+      `INSERT INTO Module 
+        (Module_ID, type,  Title, Details ,SOP_ID, staff_in_charge, Version, Update_by, Action) 
+      VALUES ?`,
+      [insertValues]
+    );
+
+    const insertValues1 = edges.map(row => [
+      row.from_module,
+      row.to_module,
+      newVersion         
+    ]);
+
+    await connection.query(
+      `INSERT INTO Edges 
+        (from_module, to_module, Version_Edge) 
+      VALUES ?`,
+      [insertValues1]
+    );
+
+    if (link.length > 0) {
+      const insertValues2 = link.map(row => [
+        row.Module_ID,
+        row.Link,
+        newVersion,
+        row.Link_Name,         
+      ]);
+
+      await connection.query(
+        `INSERT INTO Form_Link 
+          (Module_ID, Link, Version_Link,Link_Name) 
+        VALUES ?`,
+        [insertValues2]
+      );
+    }
+    await connection.commit();
+    return newVersion;
+    }catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  };
+
+
+
   module.exports = {
-    create_module,update_module,update_edges
+    create_module,update_module,update_edges, recoverSopVersion
   };
   

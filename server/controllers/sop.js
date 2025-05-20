@@ -1,3 +1,4 @@
+//controllers/sop
 const db = require('../config/db');
 const sopModel = require('../models/sopsModel');
 const moduleModel = require('../models/moduleModel');
@@ -37,71 +38,37 @@ const getSopPage = async (req, res) => {
 };
 
 const searchSops = async (req, res) => {
-  const keyword = (req.query.keyword || '').trim();
-  const department = req.query.department || '';
+  const page = req.query.page || 'normal';
+  const keyword = req.query.keyword?.trim() || '';
+  const personalId = req.query.personal_id || '';
   const team = req.query.team || '';
-  const autocomplete = req.query.autocomplete || '';
-
-  console.log('Search Parameters:', { keyword, department, team, autocomplete });
-
+  const department = req.query.department || '';
   try {
-    if (autocomplete === 'department') {
-      const [rows] = await db.query(
-        'SELECT Department_ID, Department_Name FROM Department WHERE Department_Name LIKE ? ORDER BY Department_Name',
-        [`%${keyword}%`]
-      );
+    let sops;
 
-      const result = rows.map(row => ({
-        id: row.Department_ID,
-        title: row.Department_Name,
-        description: null,
-        department: row.Department_Name,
-        team: null,
-        owner: null
-      }));
-
-      return res.json(result);
+    if (page === 'save') {
+      if (!personalId) return res.status(400).json({ error: 'personal_id 必填' });
+      sops = await sopModel.searchSavedSops(keyword, personalId);
+    } else if (page === 'my') {
+      if (!team) return res.status(400).json({ error: 'team 必填' });
+      sops = await sopModel.searchMySops(keyword, team);
+    } else {
+      sops = await sopModel.searchPublicSops(keyword,department,team);
     }
 
-    if (autocomplete === 'team') {
-      const [rows] = await db.query(
-        'SELECT Team_ID, Team_Name FROM Team WHERE Team_Name LIKE ? ORDER BY Team_Name',
-        [`%${keyword}%`]
-      );
-
-      const result = rows.map(row => ({
-        id: row.Team_ID,
-        title: row.Team_Name,
-        description: null,
-        department: null,
-        team: row.Team_Name,
-        owner: null
-      }));
-
-      return res.json(result);
-    }
-
-
-    const sops = await sopModel.searchSops(keyword, department, team);
-    return res.json(sops);
-
+    res.json(sops);
   } catch (err) {
-    console.error('[SOP_ERROR] Failed to search SOPs:', err.message);
-    res.status(500).json({ error: 'Internal Server Error', detail: err.message });
+    console.error('[SOP_SEARCH_ERROR]', err);
+    res.status(500).json({ error: 'Server error', detail: err.message });
   }
-};
-
-module.exports = {
-  searchSops,
-  // ...其他函式（getSopPage, createSOP 等）
 };
 
 
 const createSOP = async (req, res, next) => {
   console.log('req.body =', req.body);
   try {
-    const { SOP_Name, SOP_Content, Team_in_charge } = req.body;
-    if (!SOP_Name || !SOP_Content || !Team_in_charge) {
+    const { SOP_Name, SOP_Content, Team_in_charge,Created_by } = req.body;
+    if (!SOP_Name || !SOP_Content || !Team_in_charg|| !Created_by) {
       return res.status(400).json({ message: '缺少必要欄位' });
     }
     const [[teamRow]] = await db.query(
@@ -114,7 +81,11 @@ const createSOP = async (req, res, next) => {
     }
     const Team_ID = teamRow.Team_ID; 
     const newSop = await sopModel.createSop({ SOP_Name, SOP_Content, Team_ID });
-
+    await db.query(
+      `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
+       VALUES (?, ?, ?)`,
+      [newSop.id, Created_by, 'create']
+    );
     res.status(201).json({
       message: 'SOP created successfully',
       sop: {
@@ -285,9 +256,61 @@ const saveSop = async (req, res) => {
   }
 };
  
- 
+const historylist = async (req, res) => {
+  const sopId = req.params.sop_id;
+
+  try {
+        
+    // 取得 SOP 資料（nodes + edges）
+    const {sop, history} = await sopModel.gethistorylist(sopId);
+    if (!sop) {
+      return res.status(404).json({ status: 'fail', message: `NOT FOUND ${sopId}` });
+    }
+    
+    res.json({
+      status: 'success',
+      history: [...history]
+    });
+  } catch (err) {
+    console.error(`[SOP_ERROR] Failed to list history version ${sopId}:`, err.message);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      detail: err.message
+    });
+  }
+};
+
+const displayhistory = async (req, res) => {
+  const sopId = req.params.sop_id;
+  const version = req.params.version;
+  try {
+        
+    // 取得 SOP 資料（nodes + edges）
+    const {sop,  edges, module} = await sopModel.gethistorysop(sopId, version);
+    if (!sop) {
+      return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
+    }
+
+    //await logSOPView(req, sopId); // 記錄瀏覽行為
+    //const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
+    
+    res.json({
+      status: 'success',
+      data:{...sop,
+      nodes:module,
+      edges:edges},
+      message: `You viewed SOP ${sopId}`,
+      version: version
+    });
+
+  } catch (err) {
+    console.error(`[SOP_ERROR] Failed to load SOP ${sopId} in ${version}:`, err.message);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      detail: err.message
+    });
+  }
+};
 
 
-
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop  };
-
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory  };

@@ -17,10 +17,11 @@ export default function SearchResultPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   // 🔥 打後端 API（一次拿全部資料，前端分頁）
-  async function fetchData({ keyword, dept, group }) {
+  async function fetchData({ keyword, dept, group, page }) {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
+      if (page) queryParams.append('page', page); // ✅ page 傳給 API
       if (keyword) queryParams.append('keyword', keyword);
       if (dept) queryParams.append('department', dept);
       if (group) queryParams.append('team', group);
@@ -29,16 +30,13 @@ export default function SearchResultPage() {
       console.log('打到的完整 URL:', url);
 
       const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('API 呼叫失敗');
-      }
+      if (!response.ok) throw new Error('API 呼叫失敗');
 
       const result = await response.json();
       console.log('後端回傳的資料 result =', JSON.stringify(result, null, 2));
 
-      setSops(result);              // 存全部資料
-      setTotal(result.length);      // 用全部資料長度計算總數
-      setCurrentPage(page);            // 搜尋結果從第 1 頁開始
+      setSops(result);
+      setTotal(result.length);
     } catch (error) {
       console.error('fetch 錯誤:', error);
     } finally {
@@ -48,17 +46,32 @@ export default function SearchResultPage() {
 
   // 🔍 使用者點搜尋時
   const handleSearch = (keyword, dept, group) => {
-    const query = new URLSearchParams({ keyword, dept, group, page: 1 }).toString();
+    const query = new URLSearchParams({
+      page: 'normal', // ✅ 改成 page 而非 pageType
+      keyword,
+      dept,
+      group,
+      pageNum: 1
+    }).toString();
     navigate(`/search?${query}`);
   };
 
   // 🔄 換頁
-  const goToPage = (page) => {
+  const goToPage = (pageNum) => {
     const params = new URLSearchParams(location.search);
     const keyword = params.get('keyword') || '';
     const dept = params.get('dept') || '';
     const group = params.get('group') || '';
-    const query = new URLSearchParams({ keyword, dept, group, page }).toString();
+    const page = params.get('page') || 'normal'; // ✅ 保持 page 命名一致
+
+    const query = new URLSearchParams({
+      keyword,
+      dept,
+      group,
+      page,
+      pageNum: pageNum,
+    }).toString();
+
     navigate(`/search?${query}`);
   };
 
@@ -68,11 +81,13 @@ export default function SearchResultPage() {
     const keyword = params.get('keyword') || '';
     const dept = params.get('dept') || '';
     const group = params.get('group') || '';
-    const page = parseInt(params.get('page')) || 1;
+    const pageNum = parseInt(params.get('pageNum')) || 1;
+    const page = params.get('page') || 'normal';
 
-    fetchData({ keyword, dept, group });
-    setCurrentPage(page); // 同步目前頁碼
+    fetchData({ keyword, dept, group, page });
+    setCurrentPage(pageNum);
   }, [location.search]);
+
 
   // ✂️ 前端切頁（slice）
   const startIndex = (currentPage - 1) * pageSize;
@@ -121,9 +136,8 @@ export default function SearchResultPage() {
           <button
             key={i + 1}
             onClick={() => goToPage(i + 1)}
-            className={`px-3 py-1 rounded border ${
-              i + 1 === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-700'
-            }`}
+            className={`px-3 py-1 rounded border ${i + 1 === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-700'
+              }`}
           >
             {i + 1}
           </button>

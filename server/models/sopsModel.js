@@ -37,27 +37,54 @@ const getSopById = async (sopId) => {
   
   return {sop, version: version.New_Version, module, edges};
 };
-const searchSops = async (keyword, department, team) => {
+
+const gethistorysop = async (sopId, version) => {
+  // 查 SOP 主資料
+  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, Location, SOP_Content, Create_Time, is_publish
+    FROM SOP, Team 
+    WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
+  if (!sop) return null;
+
+  //查 Module
+  const [module] = await db.execute(`
+    SELECT Module_ID,  Title, Details,  staff_in_charge, type
+    FROM Module
+    Where Version=?
+    AND SOP_ID =?
+    ORDER BY Module_ID ASC;`, [version, sopId]);
+
+  // 把 Module_ID 做成陣列
+  const moduleIds = module.map(m => m.Module_ID);
   
-  let query = `
-  SELECT 
-    SOP.SOP_ID as id, 
-    SOP.SOP_Name as title, 
-    SOP.SOP_Content as description, 
-    Department.Department_Name as department,
-    Team.Team_Name as team,
-    null as owner
-  FROM SOP
-  LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_id
-  LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
-  WHERE 1=1 AND is_publish='publish'
-`;
+  const placeholders = moduleIds.map(() => '?').join(',');
+
+  // 查 edges
+  const [edges] = await db.execute(`
+    SELECT  from_module, to_module
+    FROM Edges
+    Where Version_Edge=?
+    AND (from_module IN (${placeholders}) OR to_module IN (${placeholders}))
+    ORDER BY Edge_ID ASC;`, [version, ...moduleIds, ...moduleIds]);
 
   
-const values = [];
+  return {sop,  module, edges};
+};
+
+const searchPublicSops = async (keyword = '', department = '', team = '') => {
+  let query = `
+    SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+           Department.Department_Name as department, Team.Team_Name as team,
+           null as owner
+    FROM SOP
+    LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+    LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+    WHERE SOP.is_publish = 'publish'
+  `;
+
+  const values = [];
 
   if (keyword) {
-    query += ` AND SOP_Name LIKE ? `;
+    query += ` AND SOP.SOP_Name LIKE ?`;
     values.push(`%${keyword}%`);
   }
 
@@ -68,13 +95,68 @@ const values = [];
 
   if (team) {
     query += ` AND Team.Team_Name = ?`;
-    values.push(team);
+    values.push(team.trim());
   }
 
-  const [rows] = await db.execute(query, values);
+  console.log('[SQL]', query);
+  console.log('[VALUES]', values);
+
+  const [rows] = await db.query(query, values);
   return rows;
-  
 };
+
+
+const searchSavedSops = async (keyword = '', personalId) => {
+  let query = `
+    SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+           Department.Department_Name as department, Team.Team_Name as team
+    FROM Save
+    JOIN SOP ON Save.SOP_ID = SOP.SOP_ID
+    LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+    LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+    WHERE Save.Personal_ID = ?
+      AND SOP.is_publish = 'publish'
+  `;
+
+  const values = [personalId];
+
+  if (keyword && keyword.trim() !== '') {
+    query += ` AND SOP.SOP_Name LIKE ?`;
+    values.push(`%${keyword.trim()}%`);
+  }
+
+  console.log('[searchSavedSops] SQL:', query);
+  console.log('[searchSavedSops] VALUES:', values);
+
+  const [rows] = await db.query(query, values);
+  return rows;
+};
+
+const searchMySops = async (keyword = '', teamName) => {
+  let query = `
+    SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+           Department.Department_Name as department, Team.Team_Name as team, SOP.is_publish
+    FROM SOP
+    LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+    LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+    WHERE Team.Team_Name = ?
+  `;
+
+  const values = [teamName];
+
+  if (keyword && keyword.trim() !== '') {
+    query += ` AND SOP.SOP_Name LIKE ?`;
+    values.push(`%${keyword.trim()}%`);
+  }
+
+  console.log('[searchMySops] SQL:', query);
+  console.log('[searchMySops] VALUES:', values);
+
+  const [rows] = await db.query(query, values);
+  return rows;
+};
+
+
 
 const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
 
@@ -108,7 +190,7 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
        WHERE SOP_ID = ?`,
       [SOP_Name, SOP_Content, Team_ID, SOP_ID]
     );
-    const logText = `Updated SOP fields by ${Updated_by}`;
+    const logText = `Updated `;
     await conn.execute(
       `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
        VALUES (?,?,?)`,
@@ -152,4 +234,26 @@ const checkIfSaved = async (sopId, personalId) => {
     [sopId, personalId]
   );
 };
-module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser};
+
+
+//Version control
+const gethistorylist = async (sopId) => {
+  // 確認SOPID是否存在
+  const [[sop]] = await db.execute(`
+    SELECT SOP_ID
+    FROM SOP
+    WHERE SOP_ID = ?`, [sopId]);
+  
+  // find biggest Version
+  const [history]=await db.execute(`
+    SELECT distinct Version as version, Max(Create_Time) as Update_Time
+    FROM Module
+    WHERE SOP_ID = ?
+    group by Version
+    order by Version asc
+    `, [sopId]);
+
+  return {sop, history};
+};
+module.exports = { getSopById, gethistorysop, searchPublicSops,searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser, gethistorylist};
+
