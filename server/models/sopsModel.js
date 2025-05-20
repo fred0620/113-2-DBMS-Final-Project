@@ -37,6 +37,40 @@ const getSopById = async (sopId) => {
   
   return {sop, version: version.New_Version, module, edges};
 };
+
+const gethistorysop = async (sopId, version) => {
+  // 查 SOP 主資料
+  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, Location, SOP_Content, Create_Time, is_publish
+    FROM SOP, Team 
+    WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
+  if (!sop) return null;
+
+  //查 Module
+  const [module] = await db.execute(`
+    SELECT Module_ID,  Title, Details,  staff_in_charge, type
+    FROM Module
+    Where Version=?
+    AND SOP_ID =?
+    ORDER BY Module_ID ASC;`, [version, sopId]);
+
+  // 把 Module_ID 做成陣列
+  const moduleIds = module.map(m => m.Module_ID);
+  
+  const placeholders = moduleIds.map(() => '?').join(',');
+
+  // 查 edges
+  const [edges] = await db.execute(`
+    SELECT  from_module, to_module
+    FROM Edges
+    Where Version_Edge=?
+    AND (from_module IN (${placeholders}) OR to_module IN (${placeholders}))
+    ORDER BY Edge_ID ASC;`, [version, ...moduleIds, ...moduleIds]);
+
+  
+  return {sop,  module, edges};
+};
+
+
 const searchSops = async (keyword, department, team) => {
   
   let query = `
@@ -152,4 +186,24 @@ const checkIfSaved = async (sopId, personalId) => {
     [sopId, personalId]
   );
 };
-module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser};
+
+//Version control
+const gethistorylist = async (sopId) => {
+  // 確認SOPID是否存在
+  const [[sop]] = await db.execute(`
+    SELECT SOP_ID
+    FROM SOP
+    WHERE SOP_ID = ?`, [sopId]);
+  
+  // find biggest Version
+  const [history]=await db.execute(`
+    SELECT distinct Version as version, Max(Create_Time) as Update_Time
+    FROM Module
+    WHERE SOP_ID = ?
+    group by Version
+    order by Version asc
+    `, [sopId]);
+
+  return {sop, history};
+};
+module.exports = { getSopById, gethistorysop, searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser, gethistorylist};
