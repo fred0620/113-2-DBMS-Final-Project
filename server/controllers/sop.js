@@ -38,57 +38,28 @@ const getSopPage = async (req, res) => {
 };
 
 const searchSops = async (req, res) => {
-  const keyword = (req.query.keyword || '').trim();
-  const department = req.query.department || '';
+  const page = req.query.page || 'normal';
+  const keyword = req.query.keyword?.trim() || '';
+  const personalId = req.query.personal_id || '';
   const team = req.query.team || '';
-  const autocomplete = req.query.autocomplete || '';
-
-  console.log('Search Parameters:', { keyword, department, team, autocomplete });
 
   try {
-    if (autocomplete === 'department') {
-      const [rows] = await db.query(
-        'SELECT Department_ID, Department_Name FROM Department WHERE Department_Name LIKE ? ORDER BY Department_Name',
-        [`%${keyword}%`]
-      );
+    let sops;
 
-      const result = rows.map(row => ({
-        id: row.Department_ID,
-        title: row.Department_Name,
-        description: null,
-        department: row.Department_Name,
-        team: null,
-        owner: null
-      }));
-
-      return res.json(result);
+    if (page === 'save') {
+      if (!personalId) return res.status(400).json({ error: 'personal_id 必填' });
+      sops = await sopModel.searchSavedSops(keyword, personalId);
+    } else if (page === 'my') {
+      if (!team) return res.status(400).json({ error: 'team 必填' });
+      sops = await sopModel.searchMySops(keyword, team);
+    } else {
+      sops = await sopModel.searchPublicSops(keyword);
     }
 
-    if (autocomplete === 'team') {
-      const [rows] = await db.query(
-        'SELECT Team_ID, Team_Name FROM Team WHERE Team_Name LIKE ? ORDER BY Team_Name',
-        [`%${keyword}%`]
-      );
-
-      const result = rows.map(row => ({
-        id: row.Team_ID,
-        title: row.Team_Name,
-        description: null,
-        department: null,
-        team: row.Team_Name,
-        owner: null
-      }));
-
-      return res.json(result);
-    }
-
-
-    const sops = await sopModel.searchSops(keyword, department, team);
-    return res.json(sops);
-
+    res.json(sops);
   } catch (err) {
-    console.error('[SOP_ERROR] Failed to search SOPs:', err.message);
-    res.status(500).json({ error: 'Internal Server Error', detail: err.message });
+    console.error('[SOP_SEARCH_ERROR]', err);
+    res.status(500).json({ error: 'Server error', detail: err.message });
   }
 };
 
