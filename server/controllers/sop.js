@@ -1,3 +1,4 @@
+//controllers/sop
 const db = require('../config/db');
 const sopModel = require('../models/sopsModel');
 const moduleModel = require('../models/moduleModel');
@@ -10,7 +11,7 @@ const getSopPage = async (req, res) => {
   try {
         
     // 取得 SOP 資料（nodes + edges）
-    const {sop,  edges, module} = await sopModel.getSopById(sopId);
+    const {sop,  edges, module, version} = await sopModel.getSopById(sopId);
     if (!sop) {
       return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
     }
@@ -25,6 +26,7 @@ const getSopPage = async (req, res) => {
       edges:edges},
       message: `You viewed SOP ${sopId}`,
       views: viewCount,
+      version: version
     });
   } catch (err) {
     console.error(`[SOP_ERROR] Failed to load SOP ${sopId}:`, err.message);
@@ -59,11 +61,6 @@ const searchSops = async (req, res) => {
     console.error('[SOP_SEARCH_ERROR]', err);
     res.status(500).json({ error: 'Server error', detail: err.message });
   }
-};
-
-module.exports = {
-  searchSops,
-  // ...其他函式（getSopPage, createSOP 等）
 };
 
 
@@ -119,6 +116,7 @@ const getModule = async (req, res) => {
       Department: module.Department,
       Team: module.Team,
       Ex_number: module.Ex_number,
+      Email:module.Email,
       form_links: form.map(f => ({ Link: f.Link }))
     });
   } catch (err) {
@@ -254,9 +252,62 @@ const saveSop = async (req, res) => {
   }
 };
  
- 
+const historylist = async (req, res) => {
+  const sopId = req.params.sop_id;
+
+  try {
+        
+    // 取得 SOP 資料（nodes + edges）
+    const {sop, history} = await sopModel.gethistorylist(sopId);
+    if (!sop) {
+      return res.status(404).json({ status: 'fail', message: `NOT FOUND ${sopId}` });
+    }
+    
+    res.json({
+      status: 'success',
+      history: [...history]
+    });
+  } catch (err) {
+    console.error(`[SOP_ERROR] Failed to list history version ${sopId}:`, err.message);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      detail: err.message
+    });
+  }
+};
+
+const displayhistory = async (req, res) => {
+  const sopId = req.params.sop_id;
+  const version = req.params.version;
+  try {
+        
+    // 取得 SOP 資料（nodes + edges）
+    const {sop,  edges, module} = await sopModel.gethistorysop(sopId, version);
+    if (!sop) {
+      return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
+    }
+
+    //await logSOPView(req, sopId); // 記錄瀏覽行為
+    //const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
+    
+    res.json({
+      status: 'success',
+      data:{...sop,
+      nodes:module,
+      edges:edges},
+      message: `You viewed SOP ${sopId}`,
+      version: version
+    });
+
+  } catch (err) {
+    console.error(`[SOP_ERROR] Failed to load SOP ${sopId} in ${version}:`, err.message);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      detail: err.message
+    });
+  }
+};
 
 
-
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop  };
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory  };
 

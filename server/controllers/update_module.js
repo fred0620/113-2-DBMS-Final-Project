@@ -1,4 +1,4 @@
-const { update_edges } = require('../models/update_module');
+const { update_edges, recoverSopVersion } = require('../models/update_module');
 const { getSopVersion, processModules, transformEdges } = require('../services/update_module');
 
 
@@ -10,9 +10,7 @@ const recordModules = async (req, res) => {
 
     try {
       // 將資料傳遞給 Service 層進行處理
-      const result = await processModules(modules, Updated_by,sopId, version );
-      const edges_v2= await transformEdges(edges, result.clientIdToModuleIdMap);
-      await update_edges(edges_v2, version)
+      const result = await processModules(modules, Updated_by,sopId, version, edges );
 
       // 返回成功的回應
       return res.status(200).json(result);  // 200 表示成功
@@ -26,8 +24,32 @@ const recordModules = async (req, res) => {
       });
     }
   };
+
+  const recoversop = async (req, res) => {
+    const sopId = req.params.sop_id;
+    const version = req.params.version;
+    const adminId = req.body.Updated_by;
+    const newVersion = await recoverSopVersion(sopId, version, adminId);
+
+    console.log({status:'sucess', message: `Successfully recover Version ${version}` });
+
+    try {
+
+      return res.status(200).json({status:'sucess', message: `Successfully recover Version ${version}` });  // 200 表示成功
+    } catch (error) {
+      // 捕獲錯誤並返回錯誤訊息
+      console.error('Error recover sop:', error);
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to recover sop',
+        error: error.message
+      });
+    }
+  };
   
+  
+
   module.exports = {
-    recordModules  // 將函數匯出
+    recordModules,recoversop
 };
 

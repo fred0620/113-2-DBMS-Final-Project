@@ -15,7 +15,8 @@ const getModuleById = async (module_id) => {
             U.User_Name,
             D.Department_Name AS Department,
             T.Team_Name AS Team,
-            A.Ex_number
+            A.Ex_number,
+            U.Email
         FROM Module M
         LEFT JOIN Administrator A ON M.staff_in_charge = A.Administrator_ID
         LEFT JOIN Team T ON T.Team_ID = A.Team_ID

@@ -22,24 +22,25 @@ export default function MySOPList() {
   const pageSize = 8;
   const totalPages = Math.ceil(total / pageSize);
 
+  /* ---------------- 取資料 ---------------- */
   const fetchSops = async ({ keyword, page }) => {
     setIsLoading(true);
     try {
       const qs = new URLSearchParams();
-      if (keyword) qs.append('keyword', keyword);
-      if (user.department) qs.append('department', user.department);
-      if (user.teamName) qs.append('team', user.teamName); // ✅ 傳中文名稱給後端
+      if (keyword.trim()) qs.append('keyword', keyword.trim());
+      qs.append('team', user.team);          // 傳 Q03（Team_ID）
       qs.append('page', page);
 
-      const res = await fetch(`/api/sops/search?${qs.toString()}`);
+      const res = await fetch(`/api/sops/search?${qs}`);
       if (!res.ok) throw new Error('API 呼叫失敗');
 
       const result = await res.json();
+
       const normalize = (item) => ({
         id: item.id ?? item.SOP_ID,
         title: item.title ?? item.SOP_Name,
         description: item.description ?? item.SOP_Content,
-        department: item.department ?? item.Team_in_charge,
+        team: item.team ?? item.Team_Name ?? item.Team_in_charge, // ← 改這行
       });
 
       const formatted = Array.isArray(result) ? result.map(normalize) : [];
@@ -56,9 +57,7 @@ export default function MySOPList() {
   };
 
   useEffect(() => {
-    if (!isAuthLoading && user) {
-      fetchSops({ keyword: '', page: 1 });
-    }
+    if (!isAuthLoading && user) fetchSops({ keyword: '', page: 1 });
   }, [user, isAuthLoading]);
 
   const handleSearchSubmit = (e) => {
@@ -72,10 +71,8 @@ export default function MySOPList() {
   };
 
   const handleCreateSop = async () => {
-    if (!newTitle.trim()) {
-      alert('請輸入 SOP 標題');
-      return;
-    }
+    if (!newTitle.trim()) return alert('請輸入 SOP 標題');
+
     try {
       setIsCreating(true);
       const res = await fetch('/api/sops/create', {
@@ -84,7 +81,7 @@ export default function MySOPList() {
         body: JSON.stringify({
           SOP_Name: newTitle,
           SOP_Content: newDesc,
-          Team_in_charge: user.team, // ⚠ 注意這裡仍須傳 Team_ID 給後端
+          Team_in_charge: user.team, // 傳 Team_ID
         }),
       });
 
@@ -101,29 +98,31 @@ export default function MySOPList() {
     }
   };
 
-  if (isAuthLoading || !user) {
+  if (isAuthLoading || !user)
     return (
       <>
         <NavBar />
-        <div className="text-center py-20 text-gray-600 text-lg">載入使用者資訊中...</div>
+        <div className="text-center py-20 text-gray-600 text-lg">
+          載入使用者資訊中...
+        </div>
         <Footer />
       </>
     );
-  }
 
   return (
     <>
       <NavBar />
       <header className="bg-secondary py-12 text-center">
         <h1 className="text-3xl font-bold text-primary mb-2">我的 SOP</h1>
-        <p className="text-lg">所屬部門：{user.teamName ?? user.team}</p>
+        <p className="text-lg">
+          所屬部門：{user.teamName ?? user.team }
+        </p>
 
         <form
           onSubmit={handleSearchSubmit}
           className="mt-8 flex flex-col items-center gap-4 w-full max-w-xl mx-auto"
         >
           <input
-            type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="輸入關鍵字搜尋..."
@@ -140,13 +139,16 @@ export default function MySOPList() {
       </header>
 
       <main className="py-10 px-6 max-w-7xl mx-auto">
+        {/* 卡片區 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {isLoading ? (
-            <div className="col-span-full text-center text-gray-500 py-16">載入中...</div>
-          ) : sops.length > 0 ? (
+            <div className="col-span-full text-center text-gray-500 py-16">
+              載入中...
+            </div>
+          ) : sops.length ? (
             sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable />)
           ) : (
-            <div className="col-span-full flex flex-col items-center justify-center text-center text-gray-500 py-16">
+            <div className="col-span-full flex flex-col items-center text-gray-500 py-16">
               <div className="text-5xl mb-4">😔</div>
               <p className="text-lg font-medium">找不到符合條件的 SOP</p>
               <p className="text-sm mt-2">請嘗試調整搜尋關鍵字或篩選條件</p>

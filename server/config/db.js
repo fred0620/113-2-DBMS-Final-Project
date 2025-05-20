@@ -7,7 +7,8 @@ const pool = mysql.createPool({
   database: 'DBMS_Final',  // 替換為你的資料庫名稱
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  charset: 'utf8mb4'
 });
 
 const promisePool = pool.promise();
@@ -21,4 +22,13 @@ promisePool.query('SELECT 1')
     console.error('❌ MySQL 連線失敗：', err);
   });
 
-module.exports = promisePool;
+// getConnection 函式，取得 connection 物件，用於 transaction
+const getConnection = () => {
+  return pool.promise().getConnection();
+};
+
+module.exports = {
+  execute: (...args) => promisePool.execute(...args),
+  query: (...args) => promisePool.query(...args),
+  getConnection
+};
