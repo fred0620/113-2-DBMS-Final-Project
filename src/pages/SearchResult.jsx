@@ -17,14 +17,14 @@ export default function SearchResultPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   // 🔥 打後端 API（一次拿全部資料，前端分頁）
-  async function fetchData({ keyword, dept, group, pageType }) {
+  async function fetchData({ keyword, dept, group, page }) {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
+      if (page) queryParams.append('page', page); // ✅ page 傳給 API
       if (keyword) queryParams.append('keyword', keyword);
       if (dept) queryParams.append('department', dept);
       if (group) queryParams.append('team', group);
-      if (pageType) queryParams.append('page', pageType); // pageType=normal
 
       const url = `/api/sops/search?${queryParams.toString()}`;
       console.log('打到的完整 URL:', url);
@@ -47,11 +47,11 @@ export default function SearchResultPage() {
   // 🔍 使用者點搜尋時
   const handleSearch = (keyword, dept, group) => {
     const query = new URLSearchParams({
-      page: 'normal',
+      page: 'normal', // ✅ 改成 page 而非 pageType
       keyword,
       dept,
       group,
-      pageNum: 1       // 頁碼
+      pageNum: 1
     }).toString();
     navigate(`/search?${query}`);
   };
@@ -62,13 +62,13 @@ export default function SearchResultPage() {
     const keyword = params.get('keyword') || '';
     const dept = params.get('dept') || '';
     const group = params.get('group') || '';
-    const pageType = params.get('page') || 'normal';
+    const page = params.get('page') || 'normal'; // ✅ 保持 page 命名一致
 
     const query = new URLSearchParams({
       keyword,
       dept,
       group,
-      page: pageType,
+      page,
       pageNum: pageNum,
     }).toString();
 
@@ -82,11 +82,12 @@ export default function SearchResultPage() {
     const dept = params.get('dept') || '';
     const group = params.get('group') || '';
     const pageNum = parseInt(params.get('pageNum')) || 1;
-    const pageType = params.get('page') || 'normal';
+    const page = params.get('page') || 'normal';
 
-    fetchData({ keyword, dept, group, pageType });
+    fetchData({ keyword, dept, group, page });
     setCurrentPage(pageNum);
   }, [location.search]);
+
 
   // ✂️ 前端切頁（slice）
   const startIndex = (currentPage - 1) * pageSize;
@@ -135,9 +136,8 @@ export default function SearchResultPage() {
           <button
             key={i + 1}
             onClick={() => goToPage(i + 1)}
-            className={`px-3 py-1 rounded border ${
-              i + 1 === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-700'
-            }`}
+            className={`px-3 py-1 rounded border ${i + 1 === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-700'
+              }`}
           >
             {i + 1}
           </button>
