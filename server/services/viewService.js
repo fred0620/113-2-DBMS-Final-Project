@@ -6,9 +6,9 @@ const { getLatestViewId, insertViewRecord } = require('../models/viewModel');
 const logSOPView = async (req, sopId) => {
   let personalId;
 
-  if (req.user && req.user.id) {
+  if (req.query.Personal_ID) {
     // 有登入，不是很確定
-    personalId = req.user.id;
+    personalId = req.query.Personal_ID;
   } else {
     personalId ='-1'
     // 沒登入就給隨機 ID，存在 cookie
