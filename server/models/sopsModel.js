@@ -106,37 +106,56 @@ const searchPublicSops = async (keyword = '', department = '', team = '') => {
 };
 
 
-const searchSavedSops = async (keyword, personalId) => {
-  const [rows] = await db.query(
-    `SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
-            Department.Department_Name as department, Team.Team_Name as team
-     FROM Save
-     JOIN SOP ON Save.SOP_ID = SOP.SOP_ID
-     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
-     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
-     WHERE Save.Personal_ID = ?
-       AND SOP.is_publish = 'publish'
-       AND SOP.SOP_Name LIKE ?`,
-    [personalId, `%${keyword}%`]
-  );
+const searchSavedSops = async (keyword = '', personalId) => {
+  let query = `
+    SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+           Department.Department_Name as department, Team.Team_Name as team
+    FROM Save
+    JOIN SOP ON Save.SOP_ID = SOP.SOP_ID
+    LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+    LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+    WHERE Save.Personal_ID = ?
+      AND SOP.is_publish = 'publish'
+  `;
 
+  const values = [personalId];
 
+  if (keyword && keyword.trim() !== '') {
+    query += ` AND SOP.SOP_Name LIKE ?`;
+    values.push(`%${keyword.trim()}%`);
+  }
 
+  console.log('[searchSavedSops] SQL:', query);
+  console.log('[searchSavedSops] VALUES:', values);
 
+  const [rows] = await db.query(query, values);
   return rows;
 };
-const searchMySops = async (keyword, teamName) => {
-  const [rows] = await db.query(
-    `SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
-            Department.Department_Name as department, Team.Team_Name as team, SOP.is_publish
-     FROM SOP
-     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
-     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
-     WHERE Team.Team_Name = ? AND SOP.SOP_Name LIKE ?`,
-    [teamName, `%${keyword}%`]
-  );
+
+const searchMySops = async (keyword = '', teamName) => {
+  let query = `
+    SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+           Department.Department_Name as department, Team.Team_Name as team, SOP.is_publish
+    FROM SOP
+    LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+    LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+    WHERE Team.Team_Name = ?
+  `;
+
+  const values = [teamName];
+
+  if (keyword && keyword.trim() !== '') {
+    query += ` AND SOP.SOP_Name LIKE ?`;
+    values.push(`%${keyword.trim()}%`);
+  }
+
+  console.log('[searchMySops] SQL:', query);
+  console.log('[searchMySops] VALUES:', values);
+
+  const [rows] = await db.query(query, values);
   return rows;
 };
+
 
 
 const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
