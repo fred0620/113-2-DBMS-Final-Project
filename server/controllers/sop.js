@@ -53,7 +53,7 @@ const searchSops = async (req, res) => {
       if (!team) return res.status(400).json({ error: 'team 必填' });
       sops = await sopModel.searchMySops(keyword, team);
     } else {
-      sops = await sopModel.searchPublicSops(keyword,team,department);
+      sops = await sopModel.searchPublicSops(keyword,department,team);
     }
 
     res.json(sops);
@@ -310,4 +310,3 @@ const displayhistory = async (req, res) => {
 
 
 module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory  };
-
