@@ -171,7 +171,7 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
        WHERE SOP_ID = ?`,
       [SOP_Name, SOP_Content, Team_ID, SOP_ID]
     );
-    const logText = `Updated SOP fields by ${Updated_by}`;
+    const logText = `Updated `;
     await conn.execute(
       `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
        VALUES (?,?,?)`,
