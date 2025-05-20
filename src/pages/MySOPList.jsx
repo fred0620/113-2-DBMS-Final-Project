@@ -97,6 +97,27 @@ export default function MySOPList() {
       setIsCreating(false);
     }
   };
+  const handleTogglePublish = async (sopId, nextStatus) => {
+    try {
+      const response = await fetch(`/api/sops/${sopId}/update_publish?is_publish=${nextStatus}`, {
+        method: 'PUT',
+      });
+  
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || '更新失敗');
+  
+      console.log('✅ 發佈狀態更新成功:', result);
+  
+      setSops((prev) =>
+        prev.map((sop) =>
+          sop.id === sopId ? { ...sop, published: nextStatus } : sop
+        )
+      );
+    } catch (err) {
+      console.error('❌ 發佈狀態更新失敗:', err.message);
+    }
+  };
+  
 
   if (isAuthLoading || !user)
     return (
@@ -146,7 +167,8 @@ export default function MySOPList() {
               載入中...
             </div>
           ) : sops.length ? (
-            sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable />)
+            sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable showToggle 
+            onToggle={handleTogglePublish}/>)
           ) : (
             <div className="col-span-full flex flex-col items-center text-gray-500 py-16">
               <div className="text-5xl mb-4">😔</div>
