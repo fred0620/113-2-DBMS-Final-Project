@@ -70,7 +70,7 @@ const gethistorysop = async (sopId, version) => {
   return {sop,  module, edges};
 };
 
-const searchPublicSops = async (keyword, department = '', team = '') => {
+const searchPublicSops = async (keyword = '', department = '', team = '') => {
   let query = `
     SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
            Department.Department_Name as department, Team.Team_Name as team,
@@ -79,10 +79,14 @@ const searchPublicSops = async (keyword, department = '', team = '') => {
     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
     WHERE SOP.is_publish = 'publish'
-      AND SOP.SOP_Name LIKE ?
   `;
 
-  const values = [`%${keyword}%`];
+  const values = [];
+
+  if (keyword) {
+    query += ` AND SOP.SOP_Name LIKE ?`;
+    values.push(`%${keyword}%`);
+  }
 
   if (department) {
     query += ` AND Department.Department_Name = ?`;
@@ -94,9 +98,13 @@ const searchPublicSops = async (keyword, department = '', team = '') => {
     values.push(team.trim());
   }
 
+  console.log('[SQL]', query);
+  console.log('[VALUES]', values);
+
   const [rows] = await db.query(query, values);
   return rows;
 };
+
 
 const searchSavedSops = async (keyword, personalId) => {
   const [rows] = await db.query(
@@ -163,7 +171,7 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
        WHERE SOP_ID = ?`,
       [SOP_Name, SOP_Content, Team_ID, SOP_ID]
     );
-    const logText = `Updated SOP fields by ${Updated_by}`;
+    const logText = `Updated `;
     await conn.execute(
       `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
        VALUES (?,?,?)`,
