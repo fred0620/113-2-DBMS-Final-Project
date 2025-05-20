@@ -149,6 +149,7 @@ const getModule = async (req, res) => {
       Department: module.Department,
       Team: module.Team,
       Ex_number: module.Ex_number,
+      Email:module.Email,
       form_links: form.map(f => ({ Link: f.Link }))
     });
   } catch (err) {
