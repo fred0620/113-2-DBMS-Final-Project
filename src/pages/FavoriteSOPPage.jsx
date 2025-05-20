@@ -21,12 +21,9 @@ export default function FavoriteSOPPage() {
     const fetchFavorites = async () => {
       setLoading(true);
       try {
-        const queryParams = new URLSearchParams({
-          Personal_ID: user.id,
-          keyword: '',
-          department: '',
-          team: '',
-        });
+        const queryParams = new URLSearchParams();
+        queryParams.set('page', 'save');
+        if (user?.id) queryParams.set('Personal_ID', user.id);
     
         const response = await fetch(`/api/sops/search?${queryParams.toString()}`);
         if (!response.ok) throw new Error('API 呼叫失敗');
@@ -37,7 +34,7 @@ export default function FavoriteSOPPage() {
       } finally {
         setLoading(false);
       }
-    };    
+    };
 
     fetchFavorites();
   }, [user, authLoading]);
@@ -45,7 +42,7 @@ export default function FavoriteSOPPage() {
   const handleUnfavorite = async (sopId) => {
     try {
       const response = await fetch(`/api/sops/unsave`, {
-        method: 'POST', // ← 正確方法
+        method: 'POST', 
         headers: {
           'Content-Type': 'application/json',
         },
