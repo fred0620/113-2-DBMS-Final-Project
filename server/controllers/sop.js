@@ -42,7 +42,7 @@ const searchSops = async (req, res) => {
   const keyword = req.query.keyword?.trim() || '';
   const personalId = req.query.personal_id || '';
   const team = req.query.team || '';
-
+  const department = req.query.department || '';
   try {
     let sops;
 
@@ -53,7 +53,7 @@ const searchSops = async (req, res) => {
       if (!team) return res.status(400).json({ error: 'team 必填' });
       sops = await sopModel.searchMySops(keyword, team);
     } else {
-      sops = await sopModel.searchPublicSops(keyword);
+      sops = await sopModel.searchPublicSops(keyword,team,department);
     }
 
     res.json(sops);
