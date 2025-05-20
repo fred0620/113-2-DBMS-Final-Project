@@ -50,10 +50,10 @@ const searchSops = async (keyword, department, team) => {
   FROM SOP
   LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_id
   LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
-  WHERE 1=1
+  WHERE 1=1 AND is_publish='publish'
 `;
 
-  console.log('Generated SQL Query:', query);
+  
 const values = [];
 
   if (keyword) {
@@ -70,14 +70,12 @@ const values = [];
     query += ` AND Team.Team_Name = ?`;
     values.push(team);
   }
-  console.log("Generated SQL Query:", query);
-  console.log('Query Values:', values);
+
   const [rows] = await db.execute(query, values);
-  console.log('Database query result:', rows);
   return rows;
   
 };
-// server/models/sopsModel.js （片段）
+
 const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
 
   const [insertResult] = await db.query(
@@ -104,8 +102,6 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
-
-   
     await conn.execute(
       `UPDATE SOP 
        SET SOP_Name = ?, SOP_Content = ?, Team_in_charge = ? 
@@ -149,5 +145,11 @@ const checkIfSaved = async (sopId, personalId) => {
     [sopId, personalId]
   );
  };
- 
-module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser};
+
+ const unsaveSopForUser = async (sopId, personalId) => {
+  await db.query(
+    'DELETE FROM Save WHERE SOP_ID = ? AND Personal_ID = ?',
+    [sopId, personalId]
+  );
+};
+module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser};
