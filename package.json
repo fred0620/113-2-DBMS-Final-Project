@@ -13,13 +13,12 @@
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.13",
-
     "@radix-ui/react-dialog": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.6",
-
     "axios": "^1.9.0",
     "bootstrap-icons": "^1.13.1",
     "dagre": "^0.8.5",
+    "exceljs": "^4.4.0",
     "lucide-react": "^0.503.0",
     "nanoid": "^5.1.5",
     "react": "^19.1.0",
