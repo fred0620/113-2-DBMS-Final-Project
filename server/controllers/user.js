@@ -37,8 +37,32 @@ const userregister = async (req, res) => {
     }
 };
 
+const searchUserskeyword = async (req, res) => {
+  const keyword = req.query.keyword?.trim();
+  if (!keyword) {
+    return res.status(400).json({ error: '請提供 keyword 參數' });
+  }
 
+  try {
+    const [rows] = await db.query(
+      `SELECT User.Personal_ID, User.User_Name
+FROM User
+JOIN Administrator ON User.Personal_ID = Administrator.Personal_ID
+JOIN Team ON Administrator.Team_ID = Team.Team_ID
+WHERE User.User_Name LIKE ? OR Team.Team_Name LIKE ?
+`,
+      [`%${keyword}%`, `%${keyword}%`]
+    );
 
-module.exports = {userregister};
+    res.json({ status: 'success', data: rows });
+  } catch (err) {
+    console.error('[SEARCH_USER_ERROR]', err);
+    res.status(500).json({ status: 'error', message: '伺服器錯誤', detail: err.message });
+  }
+};
+
+  
+
+module.exports = {userregister,searchUserskeyword};
 
 
