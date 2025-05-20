@@ -36,11 +36,11 @@ export default function NavBar() {
           {user?.department && (
             <Link to="/mypage" className="flex-1 px-4 py-1 text-center hover:underline whitespace-nowrap">我的SOP</Link>
           )}          {user ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pr-4">
               <button onClick={handleAuth} className="px-4 py-1 text-center hover:underline whitespace-nowrap">
                 登出
               </button>
-              <span className="text-gray-700 font-semibold flex items-center gap-1">
+              <span className="text-gray-700 font-semibold flex-1 items-center gap-3">
                 <i className="bi bi-person-fill"></i> {user.username}
               </span>
 
