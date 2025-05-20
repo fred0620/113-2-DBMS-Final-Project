@@ -29,44 +29,46 @@ const getSopById = async (sopId) => {
 
   return {sop, version: version.New_Version, edges, module};
 };
-const searchSops = async (keyword, department, team) => {
-  
-  let query = `
-  SELECT 
-    SOP.SOP_ID as id, 
-    SOP.SOP_Name as title, 
-    SOP.SOP_Content as description, 
-    Department.Department_Name as department,
-    Team.Team_Name as team,
-    null as owner
-  FROM SOP
-  LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_id
-  LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
-  WHERE 1=1 AND is_publish='publish'
-`;
-
-  
-const values = [];
-
-  if (keyword) {
-    query += ` AND SOP_Name LIKE ? `;
-    values.push(`%${keyword}%`);
-  }
-
-  if (department) {
-    query += ` AND Department.Department_Name = ?`;
-    values.push(department.trim());
-  }
-
-  if (team) {
-    query += ` AND Team.Team_Name = ?`;
-    values.push(team);
-  }
-
-  const [rows] = await db.execute(query, values);
+const searchPublicSops = async (keyword) => {
+  const [rows] = await db.query(
+    `SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+            Department.Department_Name as department, Team.Team_Name as team
+     FROM SOP
+     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+     WHERE SOP.is_publish = 'publish' AND SOP.SOP_Name LIKE ?`,
+    [`%${keyword}%`]
+  );
   return rows;
-  
 };
+const searchSavedSops = async (keyword, personalId) => {
+  const [rows] = await db.query(
+    `SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+            Department.Department_Name as department, Team.Team_Name as team
+     FROM Save
+     JOIN SOP ON Save.SOP_ID = SOP.SOP_ID
+     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+     WHERE Save.Personal_ID = ?
+       AND SOP.is_publish = 'publish'
+       AND SOP.SOP_Name LIKE ?`,
+    [personalId, `%${keyword}%`]
+  );
+  return rows;
+};
+const searchMySops = async (keyword, teamName) => {
+  const [rows] = await db.query(
+    `SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
+            Department.Department_Name as department, Team.Team_Name as team, SOP.is_publish
+     FROM SOP
+     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
+     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID
+     WHERE Team.Team_Name = ? AND SOP.SOP_Name LIKE ?`,
+    [teamName, `%${keyword}%`]
+  );
+  return rows;
+};
+
 
 const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
 
@@ -143,4 +145,4 @@ const checkIfSaved = async (sopId, personalId) => {
     [sopId, personalId]
   );
 };
-module.exports = { getSopById,searchSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser};
+module.exports = { getSopById,searchPublicSops,searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser};
