@@ -16,11 +16,11 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
+
+      const data = await res.json();
+      // console.log('✅ 後端回傳的整體資料:', data);
   
       if (!res.ok) throw new Error(data.error || data.message || '登入失敗');
-  
-      const data = await res.json();
-      console.log('✅ 後端回傳的整體資料:', data);
   
       const user = data.user;
       const detail = user.details?.[0] || {};
@@ -30,6 +30,7 @@ export default function LoginPage() {
         username: user.User_Name,
         department: detail.department || '',
         team: detail.team || '',
+        adminId: detail.Identity === 'Administrator' ? detail.id : null
       };
   
       console.log('✅ 整理後的 user:', simplifiedUser);
