@@ -23,13 +23,14 @@ export default function MySOPList() {
   const totalPages = Math.ceil(total / pageSize);
 
   /* ---------------- 取資料 ---------------- */
-  const fetchSops = async ({ keyword, page }) => {
+  const fetchSops = async ({ keyword, pageNum }) => {
     setIsLoading(true);
     try {
       const qs = new URLSearchParams();
       if (keyword.trim()) qs.append('keyword', keyword.trim());
       qs.append('team', user.team);          // 傳 Q03（Team_ID）
-      qs.append('page', page);
+      qs.append('page', 'my');                
+      qs.append('pageNum', pageNum); 
 
       const res = await fetch(`/api/sops/search?${qs}`);
       if (!res.ok) throw new Error('API 呼叫失敗');
@@ -40,7 +41,8 @@ export default function MySOPList() {
         id: item.id ?? item.SOP_ID,
         title: item.title ?? item.SOP_Name,
         description: item.description ?? item.SOP_Content,
-        team: item.team ?? item.Team_Name ?? item.Team_in_charge, // ← 改這行
+        team: item.team ?? item.Team_Name ?? item.Team_in_charge,
+        published: item.is_publish // ← 改這行
       });
 
       const formatted = Array.isArray(result) ? result.map(normalize) : [];
@@ -57,17 +59,17 @@ export default function MySOPList() {
   };
 
   useEffect(() => {
-    if (!isAuthLoading && user) fetchSops({ keyword: '', page: 1 });
+    if (!isAuthLoading && user) fetchSops({ keyword: '', pageNum: 1 });
   }, [user, isAuthLoading]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    fetchSops({ keyword, page: 1 });
+    fetchSops({ keyword, pageNum: 1 });
   };
 
   const handlePageClick = (next) => {
     if (next < 1 || next > totalPages || next === page) return;
-    fetchSops({ keyword, page: next });
+    fetchSops({ keyword, pageNum: next });
   };
 
   const handleCreateSop = async () => {
@@ -97,6 +99,27 @@ export default function MySOPList() {
       setIsCreating(false);
     }
   };
+  const handleTogglePublish = async (sopId, nextStatus) => {
+    try {
+      const response = await fetch(`/api/sops/${sopId}/update_publish?is_publish=${nextStatus}`, {
+        method: 'PUT',
+      });
+  
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || '更新失敗');
+  
+      console.log('✅ 發佈狀態更新成功:', result);
+  
+      setSops((prev) =>
+        prev.map((sop) =>
+          sop.id === sopId ? { ...sop, published: nextStatus } : sop
+        )
+      );
+    } catch (err) {
+      console.error('❌ 發佈狀態更新失敗:', err.message);
+    }
+  };
+  
 
   if (isAuthLoading || !user)
     return (
@@ -146,7 +169,8 @@ export default function MySOPList() {
               載入中...
             </div>
           ) : sops.length ? (
-            sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable />)
+            sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable showToggle 
+            onToggle={handleTogglePublish} iconMode="history"/>)
           ) : (
             <div className="col-span-full flex flex-col items-center text-gray-500 py-16">
               <div className="text-5xl mb-4">😔</div>
