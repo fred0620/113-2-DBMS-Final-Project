@@ -31,7 +31,7 @@ const getModuleById = async (module_id) => {
     
     //查 Form_Link
     const [form] = await db.execute(`
-      SELECT Link
+      SELECT Link, Link_Name
       FROM Form_Link
       Where Module_ID = ?
       AND Version_Link = ?;`, [module_id, version.New_Version]);

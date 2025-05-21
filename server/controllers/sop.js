@@ -121,7 +121,7 @@ const getModule = async (req, res) => {
       Team: module.Team,
       Ex_number: module.Ex_number,
       Email:module.Email,
-      form_links: form.map(f => ({ Link: f.Link }))
+      form_links: form.map(f => ({ Link: f.Link, Link_Name: f.Link_Name }))
     });
   } catch (err) {
     console.error(`[SOP_ERROR] Failed to load Module ${module_id}:`, err.message);
