@@ -4,6 +4,7 @@ const sopModel = require('../models/sopsModel');
 const moduleModel = require('../models/moduleModel');
 const { logSOPView } = require('../services/viewService');
 const { Viewers_NUM } = require('../models/viewModel');
+const sopstatus = require('../services/sopstatus.js');
 
 const getSopPage = async (req, res) => {
   const sopId = req.params.sop_id;
@@ -314,4 +315,31 @@ const displayhistory = async (req, res) => {
 };
 
 
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory  };
+
+//Concurrency Control
+const updateSopStatus = async (req, res) => {
+  const sopId = req.params.sop_id;
+  const { status, editor, Admin_ID } = req.body;
+
+  // 檢查參數是否齊全
+  if (!status || !editor || !Admin_ID) {
+    return res.status(400).json({ status: 'error', reason: '缺少必要欄位' });
+  }
+
+  const result = await sopstatus.handleSopStatusUpdate(sopId, status, editor, Admin_ID);
+  
+  switch (result.status) {
+    case 'success':
+      return res.status(200).json(result);
+    case 'noop':
+      return res.status(200).json(result);
+    case 'reject':
+      return res.status(409).json(result); // 409 Conflict
+    case 'error':
+    default:
+      return res.status(500).json(result);
+  }
+};
+
+
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory,updateSopStatus  };
