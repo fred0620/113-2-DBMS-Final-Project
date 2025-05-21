@@ -42,11 +42,25 @@ export default function SOPCard({
               {historyList.map(h => (
                 <li
                   key={h.version}
-                  className="flex justify-between items-center border-b pb-1"
+                  className="flex justify-between items-start border-b pb-1"
                 >
-                  <span>v{h.version}</span>
+                  <div>
+                    <span className="block font-medium">v{h.version}</span>
+                    <span className="block text-gray-500 text-xs">
+                      {h.Update_Time
+                        ? new Date(h.Update_Time).toLocaleString("zh-TW", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
+                        : "（無時間資料）"}
+                    </span>
+                  </div>
                   <button
-                    className="text-blue-600 hover:underline"
+                    className="text-blue-600 hover:underline text-sm mt-1"
                     onClick={() => navigate(`/recover/${sop.id}/${h.version}`)}
                   >
                     查看
@@ -54,6 +68,7 @@ export default function SOPCard({
                 </li>
               ))}
             </ul>
+
             <div className="mt-4 text-right">
               <button
                 onClick={() => setShowHistory(false)}
