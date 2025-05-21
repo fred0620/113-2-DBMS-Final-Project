@@ -28,4 +28,7 @@ router.get('/:sop_id/history', ctrl.historylist);
 router.get('/:sop_id/history/:version', ctrl.displayhistory);
 router.post('/:sop_id/recover/:version', update.recoversop);
 
+//Concurrency Control
+router.patch('/:sop_id/status', ctrl.updateSopStatus);
+
 module.exports = router;

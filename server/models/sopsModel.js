@@ -255,5 +255,33 @@ const gethistorylist = async (sopId) => {
 
   return {sop, history};
 };
-module.exports = { getSopById, gethistorysop, searchPublicSops,searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser, gethistorylist};
+
+//Concurreny Control
+async function getSopForUpdate(conn, sopId) {
+  if (!sopId) throw new Error('SOP_ID is required');
+  const [rows] = await conn.execute(
+    `SELECT status,editor_id, edit_name
+    FROM SOP 
+    WHERE SOP_ID = ? 
+    FOR UPDATE`,
+    [sopId]
+  );
+  return rows[0];
+}
+
+async function updateSopStatus(conn, sopId, status, editor = null, editor_id = null) {
+  if (!sopId || !status) throw new Error('SOP_ID and status are required');
+  await conn.execute(
+    `UPDATE SOP 
+    SET status = ?, edit_name = ? , editor_id =?
+    WHERE SOP_ID = ?`,
+    [status, editor, editor_id,  sopId]
+  );
+}
+
+
+module.exports = { getSopById, gethistorysop, searchPublicSops,
+  searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,
+  saveSopForUser,unsaveSopForUser, gethistorylist,getSopForUpdate,
+  updateSopStatus};
 
