@@ -1,6 +1,6 @@
 const { update_edges, recoverSopVersion } = require('../models/update_module');
 const { getSopVersion, processModules, transformEdges } = require('../services/update_module');
-
+const { insertSOPLog } = require('../models/sopsModel');
 
 // 處理來自前端的 POST 請求
 const recordModules = async (req, res) => {
@@ -11,6 +11,7 @@ const recordModules = async (req, res) => {
     try {
       // 將資料傳遞給 Service 層進行處理
       const result = await processModules(modules, Updated_by,sopId, version, edges );
+      const log = await insertSOPLog(sopId, Updated_by, "Update SOP Process");
 
       // 返回成功的回應
       return res.status(200).json(result);  // 200 表示成功

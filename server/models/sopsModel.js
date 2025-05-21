@@ -180,7 +180,7 @@ const createSop = async ({ SOP_Name, SOP_Content, Team_ID }) => {
     Team_in_charge: Team_ID     
   };
 };
-const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_by }) => {
+const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_by, logText }) => {
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
@@ -190,7 +190,6 @@ const updateSopinfo = async ({ SOP_ID, SOP_Name, SOP_Content, Team_ID, Updated_b
        WHERE SOP_ID = ?`,
       [SOP_Name, SOP_Content, Team_ID, SOP_ID]
     );
-    const logText = `Updated `;
     await conn.execute(
       `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
        VALUES (?,?,?)`,
@@ -255,5 +254,21 @@ const gethistorylist = async (sopId) => {
 
   return {sop, history};
 };
-module.exports = { getSopById, gethistorysop, searchPublicSops,searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser, gethistorylist};
+
+async function insertSOPLog(sopId, adminId, logText) {
+  try {
+    const conn = await pool.getConnection();
+    await conn.execute(
+      `INSERT INTO SOP_log (SOP_ID, Administrator_ID, log)
+       VALUES (?, ?, ?)`,
+      [sopId, adminId, logText]
+    );
+    conn.release();
+    console.log("✅ 成功寫入 SOP_log");
+  } catch (err) {
+    console.error("❌ 寫入 SOP_log 失敗：", err);
+    throw err;
+  }
+}
+module.exports = { getSopById, gethistorysop, searchPublicSops,searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,saveSopForUser,unsaveSopForUser, gethistorylist,insertSOPLog};
 

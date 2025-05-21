@@ -170,7 +170,8 @@ const updateSopinfo = async (req, res, next) => {
       SOP_Name,
       SOP_Content,
       Team_ID: Team_in_charge.trim(),   
-      Updated_by
+      Updated_by,
+      logText: "Update SOP Info"
     });
 
   

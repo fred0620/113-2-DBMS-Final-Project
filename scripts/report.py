@@ -1,4 +1,3 @@
-from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 import copy
 
@@ -11,8 +10,7 @@ def copy_style(from_cell, to_cell):
         to_cell.protection = copy.copy(from_cell.protection)
         to_cell.alignment = copy.copy(from_cell.alignment)
 
-def update_excel_table(file_path, output_path, sheet_name, table_name, data, start_col=3):
-    wb = load_workbook(file_path)
+def update_excel_table(wb, sheet_name, table_name, data, start_col=3):
     ws = wb[sheet_name]
 
     # 取得表格起始資訊
@@ -59,12 +57,12 @@ def update_excel_table(file_path, output_path, sheet_name, table_name, data, sta
     table.ref = new_ref
 
     # 儲存結果
-    wb.save(output_path)
-    print(f"✅ 表格 {table_name} 已更新並輸出至 {output_path}")
+    return wb
+    #wb.save(output_path)
+    #print(f"✅ 表格 {table_name} 已更新並輸出至 {output_path}")
     
     
-def update_excel_table_with_chart(file_path, output_path, sheet_name, table_name, data, metadata, start_col=3):
-    wb = load_workbook(file_path)
+def update_excel_table_with_chart(wb, sheet_name, table_name, data, metadata, start_col=3):
     ws = wb[sheet_name]
     update_metadata_cells(wb, sheet_name, metadata)
 
@@ -120,8 +118,9 @@ def update_excel_table_with_chart(file_path, output_path, sheet_name, table_name
             chart.series[0].cat.strRef.f = f"'{sheet_name}'!${category_col}${data_start_row}:${category_col}${end_row}"
 
     # 儲存結果
-    wb.save(output_path)
-    print(f"✅ 表格 {table_name} 與圖表已更新並輸出至 {output_path}")
+    return wb
+    #wb.save(output_path)
+    #print(f"✅ 表格 {table_name} 與圖表已更新並輸出至 {output_path}")
     
 def update_metadata_cells(wb, sheet_name, metadata):
     """
@@ -132,7 +131,7 @@ def update_metadata_cells(wb, sheet_name, metadata):
     print("有進來喔")
 
     ws = wb[sheet_name]
-    keys = ['Department', 'Manager', 'Start Time', 'End Time']
+    keys = ['Team', 'Manager', 'Start Time', 'End Time']
     start_row = 9
     col = 4  # D 欄
 
