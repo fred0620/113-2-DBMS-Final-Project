@@ -1,4 +1,3 @@
-// ✅ ModuleCreatePage.jsx（加入 SOP Info）
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
@@ -54,19 +53,19 @@ function StepNode({ data, selected }) {
           <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] bg-white rounded-lg shadow-lg p-6 space-y-5 z-50">
             <div className="space-y-4">
               <div>
-                <label className="block font-semibold mb-1">Module Name<span className="text-red-600">*</span></label>
+                <label className="block font-semibold mb-1">Module 名稱<span className="text-red-600">*</span></label>
                 <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputCls} />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Detail</label>
+                <label className="block font-semibold mb-1">詳細內容</label>
                 <textarea rows={3} value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} className={`${inputCls} resize-none`} />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Person in charge</label>
+                <label className="block font-semibold mb-1">負責人</label>
                 <input value={form.person} onChange={(e) => setForm({ ...form, person: e.target.value })} className={inputCls} />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Documents (URL)</label>
+                <label className="block font-semibold mb-1">相關連結/文件 (URL)</label>
                 <input value={form.docs} onChange={(e) => setForm({ ...form, docs: e.target.value })} className={inputCls} />
               </div>
             </div>

@@ -7,6 +7,7 @@ import ReactFlow, { MarkerType } from "reactflow";
 import "reactflow/dist/style.css";
 import StepNodeView from "../components/StepNodeView";
 import dagre from "dagre";
+import { useAuth } from "../hooks/useAuth";
 
 const NODE_W = 240;
 const NODE_H = 80;
@@ -34,6 +35,7 @@ function layout(nodes, edges, dir = "TB") {
 export default function ModulePage() {
   const { id } = useParams();
   const nav = useNavigate();
+  const { user } = useAuth();
   const [sop, setSop] = useState(null);
   const [collected, setCollected] = useState(false);
 
@@ -50,6 +52,20 @@ export default function ModulePage() {
     })();
   }, [id]);
 
+  const handleCollect = async () => {
+    try {
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sopId: id, userId: user.id }),
+      });
+      if (!res.ok) throw new Error('收藏失敗');
+      setCollected(true);
+    } catch (err) {
+      console.error('收藏失敗:', err);
+    }
+  };
+
   const rfData = useMemo(() => {
     if (!sop) return { nodes: [], edges: [] };
 
@@ -57,12 +73,11 @@ export default function ModulePage() {
       id: n.Module_ID,
       type: "stepView",
       data: {
+        id: n.Module_ID,
         title: n.Title,
         brief: n.Title.length > 26 ? n.Title.slice(0, 23) + "…" : n.Title,
         details: n.Details,
         person: n.staff_in_charge,
-        personName: n.User_Name,
-        docs: n.docs || [],
         type: n.type,
       },
       position: { x: 0, y: 0 },
@@ -147,7 +162,11 @@ export default function ModulePage() {
           <button onClick={() => nav(-1)} className="border px-6 py-2 rounded text-sm hover:bg-gray-100">
             <ArrowLeft className="w-4 h-4 inline mr-1" /> 回上一頁
           </button>
-          <button onClick={() => setCollected(true)} disabled={collected} className="bg-primary text-white px-6 py-2 rounded text-sm hover:bg-primary/90 disabled:opacity-60">
+          <button
+            onClick={handleCollect}
+            disabled={collected}
+            className="bg-primary text-white px-6 py-2 rounded text-sm hover:bg-primary/90 disabled:opacity-60"
+          >
             {collected ? "已收藏" : "收藏"}
           </button>
         </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
-import { useAuth } from '../hooks/useAuth'; // 引入模擬使用者
+import { useAuth } from '../hooks/useAuth'; 
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -67,7 +67,7 @@ export default function EditSOPPage() {
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
         Team_in_charge: user.team,       // Q03
-        Updated_by: user.name
+        Updated_by: user.username
       };
 
 
