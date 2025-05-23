@@ -11,30 +11,39 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
 
   const handleRegister = async () => {
+    
+    if (!email || !username || !password) {
+      setError('請填寫所有欄位');
+      return;
+    }
+ 
+    if (password.length < 6) {
+      setError('密碼長度至少需為 6 個字元');
+      return;
+    }
+    
+
+
     try {
-      console.log('📤 發送註冊資料:', { email, username, password }); // DEBUG 1
-  
       const res = await fetch('/api/users/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username, password }),
       });
-  
+
       const data = await res.json();
-      console.log('✅ 後端回傳資料:', data); // DEBUG 2
-  
       if (!res.ok) throw new Error(data.error || data.message || '註冊失敗');
 
-  
-    navigate('/login'); 
-
+      setError('');
+      alert('✅ 註冊成功！請使用帳號登入');
+      navigate('/login');
     } catch (err) {
-      console.error('❌ 註冊失敗：', err); // DEBUG 3
       setError(err.message);
     }
   };
-  
-  
+
+
+
 
   return (
     <div className="bg-secondary min-h-screen flex flex-col">

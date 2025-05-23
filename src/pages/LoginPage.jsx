@@ -36,6 +36,7 @@ export default function LoginPage() {
       console.log('✅ 整理後的 user:', simplifiedUser);
       localStorage.setItem('user', JSON.stringify(simplifiedUser));
       window.dispatchEvent(new Event('user-login'));
+      alert('✅ 登入成功！');
       navigate('/');
     } catch (err) {
       console.error('❌ 登入錯誤:', err);
