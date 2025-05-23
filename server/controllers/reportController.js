@@ -3,7 +3,8 @@ const { generateExcelReport } = require("../../scripts/generateExcelReport.cjs")
 const {
   getSocialInteraction,
   getNewSOP,
-  getSOPLogs
+  getSOPLogs,
+  getTeamManager
 } = require("../models/reportModel");
 const path = require("path");
 const fs = require("fs");
@@ -22,6 +23,14 @@ const exportReportHandler = async (req, res) => {
     const rows1 = await getSocialInteraction(team_name, start, end);
     const rows2 = await getNewSOP(team_name, start, end);
     const rows3 = await getSOPLogs(team_name, start, end);
+    let team_manager = null;
+    try {
+      team_manager = await getTeamManager(team_name);
+    } catch (error) {
+      console.log("Failed to get team manager:", error);
+      team_manager = ""; // 或設為 null，看你需要
+    }
+
 
     // ② 整理成報表輸出格式
     const templatePath = path.resolve(__dirname, "../../scripts/ReportTemplate.xlsx");
@@ -42,7 +51,7 @@ const exportReportHandler = async (req, res) => {
             : [["", "", "", ""]],
           metadata: {
             Team: team_name,
-            Manager: "Yen",
+            Manager: team_manager,
             "Start Time": start,
             "End Time": end
           }
