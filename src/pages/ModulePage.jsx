@@ -12,23 +12,33 @@ import { useAuth } from "../hooks/useAuth";
 const NODE_W = 240;
 const NODE_H = 80;
 
+/**
+ * 使用 dagre 進行自動排版，並回傳畫布需要的高度
+ */
 function layout(nodes, edges, dir = "TB") {
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: dir, nodesep: 120, ranksep: 100 });
   g.setDefaultEdgeLabel(() => ({}));
-  nodes.forEach(n => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
-  edges.forEach(e => g.setEdge(e.source, e.target));
+
+  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
+  edges.forEach((e) => g.setEdge(e.source, e.target));
   dagre.layout(g);
 
+  // 計算畫布高度（最底部節點 y + NODE_H）
+  let maxY = 0;
+  const laidNodes = nodes.map((n) => {
+    const p = g.node(n.id);
+    maxY = Math.max(maxY, p.y);
+    return {
+      ...n,
+      position: { x: p.x - NODE_W / 2, y: p.y - NODE_H / 2 },
+    };
+  });
+
   return {
-    nodes: nodes.map(n => {
-      const p = g.node(n.id);
-      return {
-        ...n,
-        position: { x: p.x - NODE_W / 2, y: p.y - NODE_H / 2 },
-      };
-    }),
+    nodes: laidNodes,
     edges,
+    height: maxY + NODE_H + 120, // +120 留白
   };
 }
 
@@ -36,9 +46,11 @@ export default function ModulePage() {
   const { id } = useParams();
   const nav = useNavigate();
   const { user } = useAuth();
+
   const [sop, setSop] = useState(null);
   const [collected, setCollected] = useState(false);
 
+  /* 取得 SOP 與流程圖 */
   useEffect(() => {
     (async () => {
       try {
@@ -52,24 +64,41 @@ export default function ModulePage() {
     })();
   }, [id]);
 
-  const handleCollect = async () => {
+  /* 檢查是否已收藏 */
+  useEffect(() => {
+    if (!user || !id) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/sops/search?Personal_ID=${user.id}`);
+        if (!res.ok) throw new Error("check collection failed");
+        const result = await res.json();
+        const collectedIds = result.map((s) => s.id);
+        setCollected(collectedIds.includes(id));
+      } catch (err) {
+        console.error("檢查收藏狀態失敗:", err);
+      }
+    })();
+  }, [user, id]);
+
+  /* 收藏 / 取消收藏 */
+  const toggleCollect = async () => {
+    if (!user) return alert("請先登入");
+    const endpoint = collected ? "unsave" : "save";
     try {
-      const res = await fetch('/api/favorites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sopId: id, userId: user.id }),
+      await fetch(`/api/sops/${endpoint}?SOP_ID=${id}&Personal_ID=${user.id}`, {
+        method: "POST",
       });
-      if (!res.ok) throw new Error('收藏失敗');
-      setCollected(true);
+      setCollected(!collected);
     } catch (err) {
-      console.error('收藏失敗:', err);
+      console.error("收藏操作失敗:", err);
     }
   };
 
+  /* 產生 ReactFlow nodes / edges */
   const rfData = useMemo(() => {
-    if (!sop) return { nodes: [], edges: [] };
+    if (!sop) return { nodes: [], edges: [], height: 600 };
 
-    const steps = (sop.raw.nodes || []).map(n => ({
+    const steps = (sop.raw.nodes || []).map((n) => ({
       id: n.Module_ID,
       type: "stepView",
       data: {
@@ -81,24 +110,16 @@ export default function ModulePage() {
         type: n.type,
       },
       position: { x: 0, y: 0 },
-      style: {
-        width: NODE_W,
-        height: NODE_H,
-      },
+      style: { width: NODE_W, height: NODE_H },
       draggable: false,
     }));
 
-    const edges = (sop.raw.edges || []).map(e => ({
+    const edges = (sop.raw.edges || []).map((e) => ({
       id: `${e.from_module}-${e.to_module}`,
       source: e.from_module,
       target: e.to_module,
       type: "straight",
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 20,
-        height: 20,
-        color: "#475569",
-      },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 20, height: 20, color: "#475569" },
     }));
 
     return layout(steps, edges);
@@ -117,7 +138,7 @@ export default function ModulePage() {
   }
 
   const info = sop.raw;
-  const formatDate = dt =>
+  const formatDate = (dt) =>
     dt
       ? new Date(dt).toLocaleString("zh-TW", {
           year: "numeric",
@@ -132,40 +153,73 @@ export default function ModulePage() {
   return (
     <>
       <NavBar />
-      <header className="bg-secondary py-8 text-center">
+      <header className="bg-secondary py-6 text-center">
         <h1 className="text-3xl font-bold text-primary">{info.SOP_Name}</h1>
       </header>
-      <main className="max-w-7xl mx-auto px-6 mt-10">
+
+      <main className="max-w-7xl mx-auto px-6 mt-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <aside className="w-full lg:w-60 border rounded shadow-sm bg-white p-4 text-sm whitespace-pre-wrap">
-            <p><strong>部門：</strong>{info.Team_Name}</p>
-            <p className="mt-1"><strong>位置：</strong>{info.Location ?? "（無資料）"}</p>
-            <p className="mt-1"><strong>簡介：</strong>{info.SOP_Content ?? "（無資料）"}</p>
-            <p className="mt-1"><strong>最後編輯時間：</strong>{formatDate(info.Create_Time)}</p>
-            <p className="mt-1"><strong>SOP 瀏覽次數：</strong>{info.views ?? "（無資料）"}</p>
+          {/* 側邊資訊卡 */}
+          <aside className="w-full lg:w-64 border rounded shadow-sm bg-white p-4 text-sm whitespace-pre-wrap">
+            <p>
+              <strong>部門：</strong>
+              {info.Team_Name}
+            </p>
+            <p className="mt-1">
+              <strong>位置：</strong>
+              {info.Location ?? "（無資料）"}
+            </p>
+            <p className="mt-1">
+              <strong>簡介：</strong>
+              {info.SOP_Content ?? "（無資料）"}
+            </p>
+            <p className="mt-1">
+              <strong>最後編輯時間：</strong>
+              {formatDate(info.Create_Time)}
+            </p>
+            <p className="mt-1">
+              <strong>SOP 瀏覽次數：</strong>
+              {Number(info.views) || 0}
+            </p>
           </aside>
-          <section className="flex-1 min-h-[850px] bg-white overflow-visible">
-            <div className="relative w-full h-[1200px]">
-              <ReactFlow
-                nodes={rfData.nodes}
-                edges={rfData.edges}
-                nodeTypes={nodeTypes}
-                fitView
-                panOnScroll
-                fitViewOptions={{ padding: 0.3 }}
-                proOptions={{ hideAttribution: true }}
-              />
-            </div>
+
+          {/* Flow 區域 */}
+          <section className="flex-1 bg-white">
+            {rfData.nodes.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-gray-500">
+                此 SOP 尚未建立任何流程節點
+              </div>
+            ) : (
+              <div
+                className="relative w-full"
+                style={{ height: rfData.height }}
+              >
+                <ReactFlow
+                  nodes={rfData.nodes}
+                  edges={rfData.edges}
+                  nodeTypes={nodeTypes}
+                  fitView
+                  fitViewOptions={{ padding: 0.2 }}
+                  panOnScroll
+                  proOptions={{ hideAttribution: true }}
+                />
+              </div>
+            )}
           </section>
         </div>
+
+        {/* 底部按鈕 */}
         <div className="flex justify-center gap-6 mt-12 mb-20">
-          <button onClick={() => nav(-1)} className="border px-6 py-2 rounded text-sm hover:bg-gray-100">
+          <button
+            onClick={() => nav(-1)}
+            className="border px-6 py-2 rounded text-sm hover:bg-gray-100"
+          >
             <ArrowLeft className="w-4 h-4 inline mr-1" /> 回上一頁
           </button>
+
           <button
-            onClick={handleCollect}
-            disabled={collected}
-            className="bg-primary text-white px-6 py-2 rounded text-sm hover:bg-primary/90 disabled:opacity-60"
+            onClick={toggleCollect}
+            className="bg-primary text-white px-6 py-2 rounded text-sm hover:bg-primary/90"
           >
             {collected ? "已收藏" : "收藏"}
           </button>

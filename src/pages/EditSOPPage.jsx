@@ -59,14 +59,14 @@ export default function EditSOPPage() {
       alert('使用者資訊尚未載入，請稍後再試');
       return;
     }
-
+    console.log("user", user);
     try {
       setSaving(true);
       const payload = {
         SOP_ID: id,
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
-        Team_in_charge: user.team,       // Q03
+        Team_in_charge: user.team, // 
         Updated_by: user.username
       };
 
