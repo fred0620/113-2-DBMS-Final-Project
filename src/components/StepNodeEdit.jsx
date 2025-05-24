@@ -44,8 +44,8 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
         .map((url) => ({ Link: url })),
     };
 
-    data.onSave?.(formatted); // 若沒傳 onSave 也不會壞掉
-    Object.assign(data, form); // 更新 node data
+    data.onSave?.(formatted); 
+    Object.assign(data, form); =
     setOpen(false);
   };
 
