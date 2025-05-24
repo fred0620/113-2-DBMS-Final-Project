@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
-import { useAuth } from '../hooks/useAuth'; // 引入模擬使用者
+import { useAuth } from '../hooks/useAuth'; 
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -59,15 +59,15 @@ export default function EditSOPPage() {
       alert('使用者資訊尚未載入，請稍後再試');
       return;
     }
-
+    console.log("user", user);
     try {
       setSaving(true);
       const payload = {
         SOP_ID: id,
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
-        Team_in_charge: user.team,       // Q03
-        Updated_by: user.name
+        Team_in_charge: user.teamId, 
+        Updated_by: user.username
       };
 
 

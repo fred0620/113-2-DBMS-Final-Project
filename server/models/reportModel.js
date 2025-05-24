@@ -104,6 +104,20 @@ async function getSOPRecoverLogs(SOP_ID, updateTime) {
   return rows;
 }
 
+async function getTeamManager(team_name) {
+  const [rows] = await db.execute(`
+    SELECT U.User_Name
+    FROM Team T
+    JOIN Administrator A ON T.ManagerT_ID = A.Administrator_ID
+    JOIN User U ON A.Personal_ID = U.Personal_ID
+    WHERE T.Team_Name = ?
+  `, [team_name]);
+  if (rows.length === 0) {
+  throw new Error(`No manager found for team: ${team_name}`);
+}
+  return rows.length > 0 ? rows[0].User_Name : null;
+}
+
 
 
 module.exports = {
@@ -112,7 +126,8 @@ module.exports = {
   getLatestModuleUpdates,
   getModuleByIdWithVersion,
   getSOPRecoverLogs,
-  getSOPLogs
+  getSOPLogs,
+  getTeamManager
 };
 
 

@@ -11,6 +11,8 @@ export default function NavBar() {
     if (localStorage.getItem('user')) {
       localStorage.removeItem('user'); // 登出
       window.dispatchEvent(new Event('user-logout'));
+      alert('✅ 已成功登出');
+      navigate('/');
     } else {
       navigate('/login'); // 未登入就去登入
     }

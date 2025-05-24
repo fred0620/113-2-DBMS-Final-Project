@@ -1,4 +1,3 @@
-// ✅ ModuleCreatePage.jsx（加入 SOP Info）
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
@@ -24,20 +23,30 @@ const PRIMARY = '#0f307a';
 
 function StepNode({ data, selected }) {
   const [open, setOpen] = useState(false);
+
+  const initialDocs = Array.isArray(data.docs)
+    ? data.docs.map((x) => typeof x === 'string' ? x : x?.Link || '')
+    : [''];
+
   const [form, setForm] = useState({
     title: data.title || '',
     detail: data.detail || '',
     person: data.person || '',
-    docs: data.docs || '',
+    docs: initialDocs.length > 0 ? initialDocs : [''],
   });
-
-  const inputCls = 'w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary';
 
   const handleSave = () => {
     if (!form.title.trim()) return alert('Module Name 為必填！');
-    data.onSave(form);
+
+    data.onSave({
+      ...form,
+      docs: form.docs.filter((url) => url.trim()).map((url) => ({ Link: url })),
+    });
+
     setOpen(false);
   };
+
+  const inputCls = 'w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary';
 
   return (
     <>
@@ -54,20 +63,38 @@ function StepNode({ data, selected }) {
           <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] bg-white rounded-lg shadow-lg p-6 space-y-5 z-50">
             <div className="space-y-4">
               <div>
-                <label className="block font-semibold mb-1">Module Name<span className="text-red-600">*</span></label>
+                <label className="block font-semibold mb-1">Module 名稱<span className="text-red-600">*</span></label>
                 <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputCls} />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Detail</label>
+                <label className="block font-semibold mb-1">詳細內容</label>
                 <textarea rows={3} value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} className={`${inputCls} resize-none`} />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Person in charge</label>
+                <label className="block font-semibold mb-1">負責人</label>
                 <input value={form.person} onChange={(e) => setForm({ ...form, person: e.target.value })} className={inputCls} />
               </div>
               <div>
-                <label className="block font-semibold mb-1">Documents (URL)</label>
-                <input value={form.docs} onChange={(e) => setForm({ ...form, docs: e.target.value })} className={inputCls} />
+                <label className="block font-semibold mb-1">相關連結/文件 (URL)</label>
+                {form.docs.map((link, idx) => (
+                  <input
+                    key={idx}
+                    value={link}
+                    onChange={(e) => {
+                      const newDocs = [...form.docs];
+                      newDocs[idx] = e.target.value;
+                      setForm({ ...form, docs: newDocs });
+                    }}
+                    className={`${inputCls} mb-2`}
+                  />
+                ))}
+                <button
+                  onClick={() => setForm({ ...form, docs: [...form.docs, ''] })}
+                  type="button"
+                  className="text-blue-600 text-sm underline"
+                >
+                  + 新增一個連結/文件欄位
+                </button>
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-6">
@@ -108,20 +135,6 @@ export default function ModuleCreatePage() {
   const navigate = useNavigate();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [sopInfo, setSopInfo] = useState({ SOP_Name: '', SOP_Content: '' });
-
-  useEffect(() => {
-    const fetchSOPInfo = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/sops/${id}/info`);
-        const data = await res.json();
-        setSopInfo({ SOP_Name: data.SOP_Name, SOP_Content: data.SOP_Content });
-      } catch (err) {
-        console.error('載入 SOP 資訊失敗', err);
-      }
-    };
-    fetchSOPInfo();
-  }, [id]);
 
   const handleAddNode = () => {
     const newId = nanoid(6);
@@ -132,7 +145,7 @@ export default function ModuleCreatePage() {
         position: { x: 400, y: yMax + 160 },
         type: 'step',
         data: {
-          title: '', detail: '', person: '', docs: '',
+          title: '', detail: '', person: '', docs: [''],
           onSave: (updated) => setNodes((prev) => prev.map((n) => n.id === newId ? { ...n, data: { ...n.data, ...updated } } : n)),
           onDelete: () => handleDeleteNode(newId),
         },
@@ -159,7 +172,9 @@ export default function ModuleCreatePage() {
         Title: node.data.title,
         Details: node.data.detail,
         staff_in_charge: node.data.person,
-        form_links: node.data.docs ? [{ Link: node.data.docs }] : [],
+        form_links: Array.isArray(node.data.docs)
+          ? node.data.docs.filter((d) => d.Link && d.Link.trim())
+          : [],
       }));
 
       const edgesData = edges.map((e) => ({
@@ -173,15 +188,11 @@ export default function ModuleCreatePage() {
         body: JSON.stringify({
           modules,
           edges: edgesData,
-          Updated_by: '302912', // 改為模擬使用者 ID
+          Updated_by: '302912',
         }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`HTTP ${res.status}: ${text}`);
-      }
-
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       alert('儲存成功！');
     } catch (err) {
       console.error('[ModuleCreatePage] 儲存錯誤：', err);
@@ -190,12 +201,12 @@ export default function ModuleCreatePage() {
   };
 
   const nodeTypes = useMemo(() => ({ step: StepNode }), []);
-//要改
+
   return (
     <>
       <NavBar />
       <div className="bg-primary text-white px-6 py-2 text-sm">
-        {sopInfo.SOP_Name || '未命名 SOP'}（編輯中） – ID: {id}
+        SOP ID: {id}（編輯中）
       </div>
       <main className="px-6 py-8 max-w-7xl mx-auto">
         <div className="h-[600px] border rounded shadow-sm">
@@ -215,7 +226,29 @@ export default function ModuleCreatePage() {
           </ReactFlow>
         </div>
         <div className="relative z-[50] flex justify-center gap-4 mt-6">
-          <button onClick={() => navigate(-1)} className="border px-6 py-2 rounded hover:bg-gray-100">← 回上一頁</button>
+          <AlertDialog.Root>
+            <AlertDialog.Trigger asChild>
+              <button className="border px-6 py-2 rounded hover:bg-gray-100">← 回上一頁</button>
+            </AlertDialog.Trigger>
+            <AlertDialog.Portal>
+              <AlertDialog.Overlay className="fixed inset-0 bg-black/30 z-50" />
+              <AlertDialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[360px] bg-white rounded-lg shadow-lg p-6 space-y-5 z-50">
+                <AlertDialog.Title className="text-lg font-bold">確定要返回上一頁？</AlertDialog.Title>
+                <AlertDialog.Description className="text-sm text-gray-700">
+                  返回上一頁將會捨棄目前未儲存的Module內容，且無法恢復。
+                </AlertDialog.Description>
+                <div className="flex justify-end gap-3 pt-4">
+                  <AlertDialog.Cancel asChild>
+                    <button className="border px-4 py-1.5 rounded text-sm">取消</button>
+                  </AlertDialog.Cancel>
+                  <AlertDialog.Action asChild>
+                    <button onClick={() => navigate(-1)} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-sm">確認返回</button>
+                  </AlertDialog.Action>
+                </div>
+              </AlertDialog.Content>
+            </AlertDialog.Portal>
+          </AlertDialog.Root>
+
           <button onClick={handleAddNode} className="bg-primary text-white px-6 py-2 rounded hover:bg-primary/90">新增 Module</button>
           <button onClick={handleSave} className="bg-primary text-white px-6 py-2 rounded hover:bg-primary/90">儲存流程</button>
         </div>
