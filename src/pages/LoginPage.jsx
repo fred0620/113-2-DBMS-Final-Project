@@ -29,7 +29,9 @@ export default function LoginPage() {
         id: user.id,
         username: user.User_Name,
         department: detail.department || '',
-        team: detail.team || '',
+        department_id: detail.Identity === 'Administrator' ? detail.department_id : null,
+        team: detail.Identity === 'Administrator' ?detail.team  : null,
+        team_id: detail.Identity === 'Administrator' ? detail.team_id : null,
         adminId: detail.Identity === 'Administrator' ? detail.id : null
       };
   

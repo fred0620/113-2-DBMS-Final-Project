@@ -5,10 +5,10 @@ import Footer from '../components/Footer';
 import ReactFlow, {
   Background,
   Controls,
-  Handle,
   MarkerType,
   MiniMap,
   addEdge,
+  Handle,
   useEdgesState,
   useNodesState,
   Position,
@@ -23,6 +23,7 @@ const PRIMARY = '#0f307a';
 
 function StepNode({ data, selected }) {
   const [open, setOpen] = useState(false);
+  const [users, setUsers] = useState([]);
 
   const initialDocs = Array.isArray(data.docs)
     ? data.docs.map((x) => typeof x === 'string' ? x : x?.Link || '')
@@ -35,6 +36,20 @@ function StepNode({ data, selected }) {
     docs: initialDocs.length > 0 ? initialDocs : [''],
   });
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch('/api/users/search?keyword=');
+        if (!res.ok) throw new Error('User fetch failed');
+        const result = await res.json();
+        setUsers(result.data || []);
+      } catch (err) {
+        console.error('載入使用者清單失敗:', err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   const handleSave = () => {
     if (!form.title.trim()) return alert('Module Name 為必填！');
 
@@ -42,7 +57,6 @@ function StepNode({ data, selected }) {
       ...form,
       docs: form.docs.filter((url) => url.trim()).map((url) => ({ Link: url })),
     });
-
     setOpen(false);
   };
 
@@ -59,8 +73,10 @@ function StepNode({ data, selected }) {
           </div>
         </Dialog.Trigger>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40 pointer-events-none" />
+          <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
           <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] bg-white rounded-lg shadow-lg p-6 space-y-5 z-50">
+          <Dialog.Title className="text-lg font-bold">編輯 Module</Dialog.Title>
+            <Dialog.Description className="text-sm text-gray-600"></Dialog.Description>
             <div className="space-y-4">
               <div>
                 <label className="block font-semibold mb-1">Module 名稱<span className="text-red-600">*</span></label>
@@ -72,7 +88,18 @@ function StepNode({ data, selected }) {
               </div>
               <div>
                 <label className="block font-semibold mb-1">負責人</label>
-                <input value={form.person} onChange={(e) => setForm({ ...form, person: e.target.value })} className={inputCls} />
+                <select
+                  value={form.person}
+                  onChange={(e) => setForm({ ...form, person: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">請選擇負責人</option>
+                  {users.map((user) => (
+                    <option key={user.Administrator_ID} value={user.Administrator_ID}>
+                      {user.User_Name}（{user.Team_Name}）
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block font-semibold mb-1">相關連結/文件 (URL)</label>
@@ -88,11 +115,7 @@ function StepNode({ data, selected }) {
                     className={`${inputCls} mb-2`}
                   />
                 ))}
-                <button
-                  onClick={() => setForm({ ...form, docs: [...form.docs, ''] })}
-                  type="button"
-                  className="text-blue-600 text-sm underline"
-                >
+                <button onClick={() => setForm({ ...form, docs: [...form.docs, ''] })} type="button" className="text-blue-600 text-sm underline">
                   + 新增一個連結/文件欄位
                 </button>
               </div>
@@ -172,9 +195,7 @@ export default function ModuleCreatePage() {
         Title: node.data.title,
         Details: node.data.detail,
         staff_in_charge: node.data.person,
-        form_links: Array.isArray(node.data.docs)
-          ? node.data.docs.filter((d) => d.Link && d.Link.trim())
-          : [],
+        form_links: Array.isArray(node.data.docs) ? node.data.docs.filter((d) => d.Link && d.Link.trim()) : [],
       }));
 
       const edgesData = edges.map((e) => ({
@@ -257,3 +278,4 @@ export default function ModuleCreatePage() {
     </>
   );
 }
+

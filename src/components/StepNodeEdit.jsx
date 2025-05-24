@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Handle, Position } from 'reactflow';
 import * as Dialog from '@radix-ui/react-dialog';
 
@@ -11,10 +11,34 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
     title: data.title || '',
     details: data.details || '',
     person: data.person || '',
+    personName: '',
     formLinks: safeLinks.length > 0 ? safeLinks : [''],
   });
 
   const [open, setOpen] = useState(false);
+  const [personOptions, setPersonOptions] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (!searchTerm) return;
+    const delay = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/users/search?keyword=${searchTerm}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error('fetch failed');
+        const result = await res.json();
+        setPersonOptions(result.data || []);
+      } catch (err) {
+        console.error('[StepNodeEdit] 負責人搜尋失敗:', err);
+      }
+    }, 400);
+    return () => {
+      clearTimeout(delay);
+      controller.abort();
+    };
+  }, [searchTerm]);
 
   const handleChange = (key, val) => {
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -39,13 +63,14 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
     const formatted = {
       ...form,
       docs: undefined,
+      staff_in_charge: form.person,
       formLinks: form.formLinks
         .filter((url) => url.trim())
         .map((url) => ({ Link: url })),
     };
 
-    data.onSave?.(formatted); 
-    Object.assign(data, form); =
+    data.onSave?.(formatted);
+    Object.assign(data, form);
     setOpen(false);
   };
 
@@ -92,10 +117,23 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
             <div>
               <label className="block font-semibold mb-1">負責人</label>
               <input
-                value={form.person}
-                onChange={(e) => handleChange('person', e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="搜尋姓名或 ID"
                 className="border rounded w-full px-3 py-1.5"
               />
+              <select
+                value={form.person}
+                onChange={(e) => handleChange('person', e.target.value)}
+                className="mt-2 border rounded w-full px-3 py-1.5"
+              >
+                <option value="">請選擇負責人</option>
+                {personOptions.map((p) => (
+                  <option key={p.Personal_ID} value={p.Personal_ID}>
+                    {p.User_Name}（{p.Personal_ID}）
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
