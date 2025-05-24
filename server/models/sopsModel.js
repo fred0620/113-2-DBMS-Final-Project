@@ -255,6 +255,7 @@ const gethistorylist = async (sopId) => {
   return {sop, history};
 };
 
+
 async function insertSOPLog(sopId, adminId, logText) {
   try {
     const conn = await pool.getConnection();
@@ -271,7 +272,9 @@ async function insertSOPLog(sopId, adminId, logText) {
   }
 }
 
+
 //Concurreny Control
+
 async function getSopForUpdate(conn, sopId) {
   if (!sopId) throw new Error('SOP_ID is required');
   const [rows] = await conn.execute(
@@ -298,5 +301,9 @@ async function updateSopStatus(conn, sopId, status, editor = null, editor_id = n
 module.exports = { getSopById, gethistorysop, searchPublicSops,
   searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,
   saveSopForUser,unsaveSopForUser, gethistorylist,getSopForUpdate,
-  updateSopStatus, insertSOPLog};
+
+  updateSopStatus,insertSOPLog};
+
+
+
 
