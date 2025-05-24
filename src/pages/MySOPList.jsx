@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import SOPCard from '../components/SOPCard';
@@ -18,6 +19,7 @@ export default function MySOPList() {
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const pageSize = 8;
   const totalPages = Math.ceil(total / pageSize);
@@ -36,7 +38,6 @@ export default function MySOPList() {
       if (!res.ok) throw new Error('API 呼叫失敗');
 
       const result = await res.json();
-
       const normalize = (item) => ({
         id: item.id ?? item.SOP_ID,
         title: item.title ?? item.SOP_Name,
@@ -83,7 +84,7 @@ export default function MySOPList() {
         body: JSON.stringify({
           SOP_Name: newTitle,
           SOP_Content: newDesc,
-          Team_in_charge: user.team, // 傳 Team_ID
+          Team_in_charge: user.team,
         }),
       });
 
@@ -99,7 +100,7 @@ export default function MySOPList() {
       setIsCreating(false);
     }
   };
-  const handleTogglePublish = async (sopId, nextStatus) => {
+const handleTogglePublish = async (sopId, nextStatus) => {
     try {
       const response = await fetch(`/api/sops/${sopId}/update_publish?is_publish=${nextStatus}`, {
         method: 'PUT',
@@ -120,7 +121,6 @@ export default function MySOPList() {
     }
   };
   
-
   if (isAuthLoading || !user)
     return (
       <>
@@ -137,37 +137,17 @@ export default function MySOPList() {
       <NavBar />
       <header className="bg-secondary py-12 text-center">
         <h1 className="text-3xl font-bold text-primary mb-2">我的 SOP</h1>
-        <p className="text-lg">
-          所屬部門：{user.teamName ?? user.team }
-        </p>
-
-        <form
-          onSubmit={handleSearchSubmit}
-          className="mt-8 flex flex-col items-center gap-4 w-full max-w-xl mx-auto"
-        >
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="輸入關鍵字搜尋..."
-            className="w-full border rounded px-4 py-2"
-          />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="bg-primary text-white px-10 py-2 rounded disabled:opacity-70"
-          >
-            搜尋
-          </button>
+        <p className="text-lg">所屬部門：{user.teamName ?? user.team}</p>
+        <form onSubmit={handleSearchSubmit} className="mt-8 flex flex-col items-center gap-4 w-full max-w-xl mx-auto">
+          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="輸入關鍵字搜尋..." className="w-full border rounded px-4 py-2" />
+          <button type="submit" disabled={isLoading} className="bg-primary text-white px-10 py-2 rounded disabled:opacity-70">搜尋</button>
         </form>
       </header>
 
       <main className="py-10 px-6 max-w-7xl mx-auto">
-        {/* 卡片區 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {isLoading ? (
-            <div className="col-span-full text-center text-gray-500 py-16">
-              載入中...
-            </div>
+            <div className="col-span-full text-center text-gray-500 py-16">載入中...</div>
           ) : sops.length ? (
             sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable showToggle 
             onToggle={handleTogglePublish} iconMode="history"/>)
@@ -185,59 +165,51 @@ export default function MySOPList() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label className="block text-sm font-semibold mb-1">標題</label>
-              <input
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="輸入 SOP 標題"
-                className="border w-full rounded px-4 py-2 text-sm"
-              />
+              <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="輸入 SOP 標題" className="border w-full rounded px-4 py-2 text-sm" />
               <p className="text-xs text-gray-400 mt-1">最多 30 字</p>
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1">簡介</label>
-              <textarea
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="輸入 SOP 簡介"
-                rows={5}
-                className="border w-full rounded px-4 py-2 text-sm resize-none"
-              />
+              <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="輸入 SOP 簡介" rows={5} className="border w-full rounded px-4 py-2 text-sm resize-none" />
             </div>
           </div>
-          <button
-            onClick={handleCreateSop}
-            disabled={!newTitle.trim() || isCreating}
-            className="bg-primary text-white px-10 py-3 rounded mt-8 hover:bg-primary/90 disabled:opacity-50 block mx-auto"
-          >
-            進入 Module 新增頁面
-          </button>
+          <AlertDialog.Root open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+            <AlertDialog.Trigger asChild>
+              <button disabled={!newTitle.trim() || isCreating} className="bg-primary text-white px-10 py-3 rounded mt-8 hover:bg-primary/90 disabled:opacity-50 block mx-auto">
+                進入 Module 新增頁面
+              </button>
+            </AlertDialog.Trigger>
+            <AlertDialog.Portal>
+              <AlertDialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
+              <AlertDialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-6 w-[400px] z-50">
+                <AlertDialog.Title className="text-lg font-bold mb-2">確定要進入 Module 新增頁面？</AlertDialog.Title>
+                <AlertDialog.Description className="text-sm text-gray-600">
+                  進入後將無法返回 SOP 標題與簡介頁面。是否繼續？
+                </AlertDialog.Description>
+                <div className="flex justify-end gap-3 mt-6">
+                  <AlertDialog.Cancel asChild>
+                    <button className="px-4 py-2 border rounded text-sm">取消</button>
+                  </AlertDialog.Cancel>
+                  <AlertDialog.Action asChild>
+                    <button onClick={handleCreateSop} className="px-4 py-2 bg-primary text-white rounded text-sm hover:bg-primary/90">確認</button>
+                  </AlertDialog.Action>
+                </div>
+              </AlertDialog.Content>
+            </AlertDialog.Portal>
+          </AlertDialog.Root>
         </div>
       </main>
 
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2 mt-10 mb-20">
           {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => handlePageClick(i + 1)}
-              className={`px-3 py-1 rounded border ${
-                i + 1 === page ? 'bg-primary text-white' : 'bg-white text-gray-700'
-              }`}
-            >
-              {i + 1}
-            </button>
+            <button key={i + 1} onClick={() => handlePageClick(i + 1)} className={`px-3 py-1 rounded border ${i + 1 === page ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}>{i + 1}</button>
           ))}
           {page < totalPages && (
-            <button
-              onClick={() => handlePageClick(page + 1)}
-              className="px-3 py-1 rounded border bg-white text-gray-700"
-            >
-              下一頁 →
-            </button>
+            <button onClick={() => handlePageClick(page + 1)} className="px-3 py-1 rounded border bg-white text-gray-700">下一頁 →</button>
           )}
         </div>
       )}
-
       <Footer />
     </>
   );

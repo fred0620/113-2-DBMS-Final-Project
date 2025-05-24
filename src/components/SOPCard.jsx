@@ -161,7 +161,7 @@ export default function SOPCard({
 
         {editable && (
           <Link
-            to={`/module/${sop.id}/edit`}
+            to={`/sop/${sop.id}/edit`}
             className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
           >
             編輯
