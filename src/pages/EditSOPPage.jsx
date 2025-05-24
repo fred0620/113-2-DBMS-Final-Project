@@ -66,7 +66,7 @@ export default function EditSOPPage() {
         SOP_ID: id,
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
-        Team_in_charge: user.team, // 
+        Team_in_charge: user.teamId, 
         Updated_by: user.username
       };
 

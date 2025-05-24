@@ -12,9 +12,6 @@ import { useAuth } from "../hooks/useAuth";
 const NODE_W = 240;
 const NODE_H = 80;
 
-/**
- * 使用 dagre 進行自動排版，並回傳畫布需要的高度
- */
 function layout(nodes, edges, dir = "TB") {
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: dir, nodesep: 120, ranksep: 100 });
@@ -24,7 +21,6 @@ function layout(nodes, edges, dir = "TB") {
   edges.forEach((e) => g.setEdge(e.source, e.target));
   dagre.layout(g);
 
-  // 計算畫布高度（最底部節點 y + NODE_H）
   let maxY = 0;
   const laidNodes = nodes.map((n) => {
     const p = g.node(n.id);
@@ -38,7 +34,7 @@ function layout(nodes, edges, dir = "TB") {
   return {
     nodes: laidNodes,
     edges,
-    height: maxY + NODE_H + 120, // +120 留白
+    height: maxY + NODE_H + 120, 
   };
 }
 
