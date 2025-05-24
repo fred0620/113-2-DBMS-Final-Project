@@ -102,3 +102,92 @@ Server is running on http://localhost:3000   (Express 後端 API)
 📮 有任何問題請直接看 `vite.config.js` 與 `server/index.js`，我們已盡量保持架構清晰！
 
 ```
+
+以下是一份關於如何在專案中**正確使用 Python script 並設定 `openpyxl` 套件與 `.env` 檔**的完整教學，格式為 Markdown，可直接貼入 Notion、GitHub README 或文件中使用：
+
+---
+
+# 🐍 Python Script 使用教學與環境設定指南
+
+本教學將引導你如何：
+
+1. 安裝並確認 Python 與 `openpyxl` 套件
+2. 設定 `.env` 檔指定 Python 路徑
+3. 正確執行你的 Python script
+
+---
+
+## ✅ 步驟一：確認 Python 與 `openpyxl` 安裝
+
+在終端機中輸入以下指令：
+
+```bash
+which python3
+```
+
+📌 這會回傳你目前系統中的 Python3 執行路徑，例如：
+
+```
+/usr/local/bin/python3
+```
+
+接著檢查是否已安裝 `openpyxl` 套件：
+
+```bash
+python3 -m pip list | grep openpyxl
+```
+
+若未安裝，請使用 pip 安裝：
+
+```bash
+pip install openpyxl
+```
+
+---
+
+## 🛠️ 步驟二：設定 `.env` 檔（可選）
+
+若你使用的是 VS Code、Jupyter Notebook 或其他需要指定 Python 路徑的環境，請在專案根目錄新增 `.env` 檔，內容如下：
+
+```env
+PYTHON_PATH=/usr/local/bin/python3
+```
+
+請根據實際 `which python3` 的結果填入正確路徑。
+
+📌 記得將 `.env` 加入 `.gitignore`，避免路徑資訊被版本控制。
+
+---
+
+## 🚀 步驟三：撰寫與執行 Python Script
+
+範例 `script.py`：
+
+```python
+from openpyxl import load_workbook
+
+# 載入 Excel 檔案
+wb = load_workbook("example.xlsx")
+ws = wb.active
+
+# 讀取 A1 儲存格內容
+print("A1 儲存格內容為：", ws["A1"].value)
+```
+
+執行方式：
+
+```bash
+python3 script.py
+```
+
+---
+
+## 🧪 附加建議
+
+* 使用虛擬環境（`python3 -m venv venv`）可避免污染全域環境。
+* 若搭配 `.env` 檔使用 VS Code，請安裝 **Python Extension** 並設定 `python.pythonPath`。
+
+---
+
+如需進一步教學或套件整合，歡迎隨時提問。
+
