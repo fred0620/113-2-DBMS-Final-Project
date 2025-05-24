@@ -101,7 +101,7 @@ Server is running on http://localhost:3000   (Express 後端 API)
 
 📮 有任何問題請直接看 `vite.config.js` 與 `server/index.js`，我們已盡量保持架構清晰！
 
-```
+
 
 以下是一份關於如何在專案中**正確使用 Python script 並設定 `openpyxl` 套件與 `.env` 檔**的完整教學，格式為 Markdown，可直接貼入 Notion、GitHub README 或文件中使用：
 
