@@ -1,20 +1,23 @@
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import SearchBar from '../components/SearchBar';
+import Footer from '../components/Footer';
 
-export default function HomePublic() {
+export default function HomePrivate() {
   return (
-    <div className="bg-secondary min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <NavBar />
-      <div className="flex-grow flex flex-col items-center justify-center">
-        <header className="text-center">
-          <h1 className="text-4xl font-bold text-primary mb-6">
+
+      {/* 中間淺藍色滿版區塊 */}
+      <main className="flex-grow bg-secondary flex items-center justify-center">
+        <div className="text-center w-full max-w-4xl px-4 py-12">
+          <h1 className="text-2xl font-bold text-primary mb-6">
             政大SOP整合系統 NCCU SOP Center
           </h1>
-          {/* 不需要特別傳 onSearch，SearchBar 自己 navigate */}
           <SearchBar />
-        </header>
-      </div>
+        </div>
+      </main>
+
       <Footer />
     </div>
   );
