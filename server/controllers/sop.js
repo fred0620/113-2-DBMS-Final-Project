@@ -69,7 +69,7 @@ const createSOP = async (req, res, next) => {
   console.log('req.body =', req.body);
   try {
     const { SOP_Name, SOP_Content, Team_in_charge,Created_by } = req.body;
-    if (!SOP_Name || !SOP_Content || !Team_in_charg|| !Created_by) {
+    if (!SOP_Name || !SOP_Content || !Team_in_charge|| !Created_by) {
       return res.status(400).json({ message: '缺少必要欄位' });
     }
     const [[teamRow]] = await db.query(
@@ -87,6 +87,14 @@ const createSOP = async (req, res, next) => {
        VALUES (?, ?, ?)`,
       [newSop.id, Created_by, 'create']
     );
+    await db.query(
+      `INSERT INTO Module (SOP_ID, Version, Type, Title, Details)
+       VALUES (?, 1, 'start', '尚未建立Module', '')`,
+      [newSop.id]
+    );
+
+    
+    
     res.status(201).json({
       message: 'SOP created successfully',
       sop: {
