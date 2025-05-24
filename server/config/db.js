@@ -1,10 +1,12 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const mysql = require('mysql2');
 
 const pool = mysql.createPool({
-  host: 'dbms-final-project.cadio04y0g2o.us-east-1.rds.amazonaws.com',         // 或遠端伺服器的 IP
-  user: 'admin',              // 替換為你的使用者名稱
-  password: 'Final2025!SQL',  // 替換為你的密碼
-  database: 'DBMS_Final',  // 替換為你的資料庫名稱
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

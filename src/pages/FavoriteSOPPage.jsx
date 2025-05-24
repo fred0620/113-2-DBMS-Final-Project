@@ -16,33 +16,69 @@ export default function FavoriteSOPPage() {
   const currentItems = favorites.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   useEffect(() => {
-    if (!user || authLoading) return;
-
+    if (!user || authLoading) {
+      console.log("⏳ 等待 user 或 auth 載入中...");
+      return;
+    }
+  
     const fetchFavorites = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/sops/search?Personal_ID=${user.id}`);
-        if (!response.ok) throw new Error('API 呼叫失敗');
+        const queryParams = new URLSearchParams();
+        queryParams.set('page', 'save');
+        if (user?.id) queryParams.set('personal_id', user.id);
+  
+        const apiUrl = `/api/sops/search?${queryParams.toString()}`;
+  
+        const response = await fetch(apiUrl);
+  
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error("❌ API 回傳錯誤內容:", errText);
+          throw new Error('API 呼叫失敗');
+        }
+  
         const result = await response.json();
-        setFavorites(result); // result 應該是 SOP 陣列
+        console.log("✅ 收藏資料取得成功:", result);
+        setFavorites(result);
       } catch (err) {
-        console.error('載入收藏 SOP 失敗:', err);
+        console.error('❌ 載入收藏 SOP 失敗:', err);
       } finally {
         setLoading(false);
       }
     };
-
+  
+    console.log("👤 使用者資訊:", user);
     fetchFavorites();
   }, [user, authLoading]);
+  
 
-  const handleUnfavorite = async (id) => {
+  const handleUnfavorite = async (sopId) => {
     try {
-      await fetch(`/api/favorites/${id}`, { method: 'DELETE' });
-      setFavorites((prev) => prev.filter((sop) => sop.id !== id));
+      const response = await fetch(`/api/sops/unsave`, {
+        method: 'POST', 
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          SOP_ID: sopId,
+          Personal_ID: user.id,
+        }),
+      });
+  
+      if (!response.ok) throw new Error('取消收藏 API 失敗');
+  
+      const result = await response.json();
+      console.log('✅ 取消收藏成功:', result);
+  
+      // 從畫面中移除已取消收藏的 SOP
+      setFavorites((prev) => prev.filter((sop) => sop.id !== sopId));
     } catch (err) {
-      console.error('取消收藏失敗:', err);
+      console.error('❌ 取消收藏失敗:', err);
     }
   };
+  
+  
 
   return (
     <>

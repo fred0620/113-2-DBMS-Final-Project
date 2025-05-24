@@ -1,8 +1,10 @@
+//controllers/sop
 const db = require('../config/db');
 const sopModel = require('../models/sopsModel');
 const moduleModel = require('../models/moduleModel');
 const { logSOPView } = require('../services/viewService');
 const { Viewers_NUM } = require('../models/viewModel');
+const sopstatus = require('../services/sopstatus.js');
 
 const getSopPage = async (req, res) => {
   const sopId = req.params.sop_id;
@@ -35,31 +37,39 @@ const getSopPage = async (req, res) => {
     });
   }
 };
+
 const searchSops = async (req, res) => {
-  let keyword = (req.query.keyword || '').trim();
-  
-  // 解碼 URL 中的關鍵字參數，確保編碼正確
-  
-  console.log('Received keyword:',keyword);
-
-  const department = req.query.department || '';
+  const page = req.query.page || 'normal';
+  const keyword = req.query.keyword?.trim() || '';
+  const personalId = req.query.personal_id || '';
   const team = req.query.team || '';
-
-  console.log('Search Parameters:', { keyword, department, team });
-
+  const department = req.query.department || '';
   try {
-    const sops = await sopModel.searchSops(keyword, department, team);
+    let sops;
+
+    if (page === 'save') {
+      if (!personalId) return res.status(400).json({ error: 'personal_id 必填' });
+      sops = await sopModel.searchSavedSops(keyword, personalId);
+    } else if (page === 'my') {
+      if (!team) return res.status(400).json({ error: 'team 必填' });
+      sops = await sopModel.searchMySops(keyword, team);
+    } else {
+      sops = await sopModel.searchPublicSops(keyword,department,team);
+    }
+
     res.json(sops);
   } catch (err) {
-    console.error('[SOP_ERROR] Failed to search SOPs:', err.message);
-    res.status(500).json({ error: 'Internal Server Error', detail: err.message });
+    console.error('[SOP_SEARCH_ERROR]', err);
+    res.status(500).json({ error: 'Server error', detail: err.message });
   }
 };
+
+
 const createSOP = async (req, res, next) => {
   console.log('req.body =', req.body);
   try {
-    const { SOP_Name, SOP_Content, Team_in_charge } = req.body;
-    if (!SOP_Name || !SOP_Content || !Team_in_charge) {
+    const { SOP_Name, SOP_Content, Team_in_charge,Created_by } = req.body;
+    if (!SOP_Name || !SOP_Content || !Team_in_charg|| !Created_by) {
       return res.status(400).json({ message: '缺少必要欄位' });
     }
     const [[teamRow]] = await db.query(
@@ -72,7 +82,11 @@ const createSOP = async (req, res, next) => {
     }
     const Team_ID = teamRow.Team_ID; 
     const newSop = await sopModel.createSop({ SOP_Name, SOP_Content, Team_ID });
-
+    await db.query(
+      `INSERT INTO SOP_log (SOP_ID, Administrator_ID, Log)
+       VALUES (?, ?, ?)`,
+      [newSop.id, Created_by, 'create']
+    );
     res.status(201).json({
       message: 'SOP created successfully',
       sop: {
@@ -107,7 +121,8 @@ const getModule = async (req, res) => {
       Department: module.Department,
       Team: module.Team,
       Ex_number: module.Ex_number,
-      form_links: form.map(f => ({ Link: f.Link }))
+      Email:module.Email,
+      form_links: form.map(f => ({ Link: f.Link, Link_Name: f.Link_Name }))
     });
   } catch (err) {
     console.error(`[SOP_ERROR] Failed to load Module ${module_id}:`, err.message);
@@ -156,7 +171,8 @@ const updateSopinfo = async (req, res, next) => {
       SOP_Name,
       SOP_Content,
       Team_ID: Team_in_charge.trim(),   
-      Updated_by
+      Updated_by,
+      logText: "Update SOP Info"
     });
 
   
@@ -214,11 +230,116 @@ const saveSop = async (req, res) => {
     });
   }
  };
+ const unsaveSop = async (req, res) => {
+  const { SOP_ID, Personal_ID } = req.body;
+
+  if (!SOP_ID || !Personal_ID) {
+    return res.status(400).json({
+      status: 'error',
+      message: '缺少 SOP_ID 或 Personal_ID',
+      code: 400
+    });
+  }
+
+  try {
+    await sopModel.unsaveSopForUser(SOP_ID, Personal_ID); // 無論存不存在都刪
+    res.status(200).json({
+      status: 'success',
+      message: '資料已成功取消收藏。',
+      code: 200
+    });
+  } catch (err) {
+    console.error('[UNSAVE_SOP_ERROR]', err);
+    res.status(500).json({
+      status: 'error',
+      message: '伺服器錯誤',
+      code: 500
+    });
+  }
+};
  
- 
- 
+const historylist = async (req, res) => {
+  const sopId = req.params.sop_id;
+
+  try {
+        
+    // 取得 SOP 資料（nodes + edges）
+    const {sop, history} = await sopModel.gethistorylist(sopId);
+    if (!sop) {
+      return res.status(404).json({ status: 'fail', message: `NOT FOUND ${sopId}` });
+    }
+    
+    res.json({
+      status: 'success',
+      history: [...history]
+    });
+  } catch (err) {
+    console.error(`[SOP_ERROR] Failed to list history version ${sopId}:`, err.message);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      detail: err.message
+    });
+  }
+};
+
+const displayhistory = async (req, res) => {
+  const sopId = req.params.sop_id;
+  const version = req.params.version;
+  try {
+        
+    // 取得 SOP 資料（nodes + edges）
+    const {sop,  edges, module} = await sopModel.gethistorysop(sopId, version);
+    if (!sop) {
+      return res.status(404).json({ status: 'fail', message: 'NOT FOUND SOP' });
+    }
+
+    //await logSOPView(req, sopId); // 記錄瀏覽行為
+    //const viewCount = await Viewers_NUM(sopId); // 查瀏覽數
+    
+    res.json({
+      status: 'success',
+      data:{...sop,
+      nodes:module,
+      edges:edges},
+      message: `You viewed SOP ${sopId}`,
+      version: version
+    });
+
+  } catch (err) {
+    console.error(`[SOP_ERROR] Failed to load SOP ${sopId} in ${version}:`, err.message);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      detail: err.message
+    });
+  }
+};
 
 
 
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop   };
+//Concurrency Control
+const updateSopStatus = async (req, res) => {
+  const sopId = req.params.sop_id;
+  const { status, editor, Admin_ID } = req.body;
 
+  // 檢查參數是否齊全
+  if (!status || !editor || !Admin_ID) {
+    return res.status(400).json({ status: 'error', reason: '缺少必要欄位' });
+  }
+
+  const result = await sopstatus.handleSopStatusUpdate(sopId, status, editor, Admin_ID);
+  
+  switch (result.status) {
+    case 'success':
+      return res.status(200).json(result);
+    case 'noop':
+      return res.status(200).json(result);
+    case 'reject':
+      return res.status(409).json(result); // 409 Conflict
+    case 'error':
+    default:
+      return res.status(500).json(result);
+  }
+};
+
+
+module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory,updateSopStatus  };

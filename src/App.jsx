@@ -14,6 +14,8 @@ import EditSOPPage from './pages/EditSOPPage';
 import ModuleEditPage from './pages/ModuleEditPage';
 import ModuleCreatePage from './pages/ModuleCreatePage';
 
+import RecoverPage from './pages/RecoverPage';
+
 const isLoggedIn = () => !!localStorage.getItem('user');
 
 export default function App() {
@@ -32,6 +34,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/favorites" element={<FavoriteSOPPage />} />  
+
+      <Route path="/recover/:id/:version" element={<RecoverPage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
