@@ -13,16 +13,54 @@ export default function SearchBar({
   const [group, setGroup] = useState(defaultGroup);
 
   const groupOptions = {
-    "主計室": [],
-    "總務處": ["總務處出納組"],
+    "主計室": [
+      "主計室第一組",
+      "主計室第二組",
+      "主計室第三組"
+    ],
+    "總務處": [
+      "總務處文書組",
+      "總務處事務組",
+      "總務處財產組",
+      "總務處營繕組",
+      "總務處出納組",
+      "總務處環境保護與職業安全衛生組",
+      "總務處校園規劃與發展組"
+    ],
     "學生事務處": [
       "學生事務處生活事務暨僑生輔導組",
       "學生事務處課外活動組",
-      "學生事務處住宿輔導組"
+      "學生事務處住宿輔導組",
+      "學生事務處學生安全輔導組",
+      "學生事務處藝文中心",
+      "學生事務處職業生涯發展中心",
+      "學生事務處身心健康中心"
     ],
-    "人事室": [],
-    "教務處": ["教務處註冊組"]
+    "人事室": [
+      "人事室第一組",
+      "人事室第二組",
+      "人事室第三組",
+      "人事室第四組"
+    ],
+    "秘書處": [
+      "秘書處第一組",
+      "秘書處第二組",
+      "秘書處第三組"
+    ],
+    "教務處": [
+      "教務處註冊組",
+      "教務處課務組",
+      "教務處綜合業務組",
+      "教務處通識教育中心",
+      "教務處教學發展中心"
+    ],
+    "商學院": [
+      "金融學系",
+      "資訊管理學系",
+      "財務管理學系"
+    ]
   };
+
 
   const triggerSearch = () => {
     console.log('triggerSearch 被呼叫');
@@ -89,12 +127,17 @@ export default function SearchBar({
           className="w-48 md:w-56 border rounded px-3 py-2"
         >
           <option value="">SOP組別</option>
-          {(groupOptions[dept] || []).map((groupName) => (
+          {(
+            dept === ''
+              ? Object.values(groupOptions).flat()
+              : groupOptions[dept] || []
+          ).map((groupName) => (
             <option key={groupName} value={groupName}>
               {groupName}
             </option>
           ))}
         </select>
+
       </div>
 
       {/* 搜尋按鈕 */}

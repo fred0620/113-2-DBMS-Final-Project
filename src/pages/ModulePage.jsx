@@ -45,6 +45,7 @@ export default function ModulePage() {
 
   const [sop, setSop] = useState(null);
   const [collected, setCollected] = useState(false);
+  const { user } = useAuth();
 
   /* 取得 SOP 與流程圖 */
   useEffect(() => {
@@ -121,6 +122,44 @@ export default function ModulePage() {
     return layout(steps, edges);
   }, [sop]);
 
+  const handleCollect = async () => {
+    if (!user?.id) {
+      alert("請先登入才能收藏 SOP");
+      return;
+    }
+  
+    const payload = {
+      SOP_ID: id,
+      Personal_ID: user.id,
+    };
+  
+    console.log("📦 傳給後端的收藏參數：", payload);
+  
+    try {
+      const res = await fetch("/api/sops/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+  
+      const result = await res.json();
+      if (res.ok) {
+        setCollected(true);
+        alert(result.message);
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      console.error("❌ 收藏失敗:", err);
+      alert("收藏失敗，請稍後再試。");
+    }
+  };
+  
+  
+
+
   const nodeTypes = useMemo(() => ({ stepView: StepNodeView }), []);
 
   if (!sop) {
@@ -137,13 +176,13 @@ export default function ModulePage() {
   const formatDate = (dt) =>
     dt
       ? new Date(dt).toLocaleString("zh-TW", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
       : "（無資料）";
 
   return (
