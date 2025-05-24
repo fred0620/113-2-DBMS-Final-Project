@@ -41,7 +41,9 @@ const login = async (email, password) => {
     details.push({
         Identity: 'Student',
         id: student.Student_ID,
+        department_id : student.Department_ID,
         department: student.Department_Name,
+        team_id: student.Team_ID,
         team: student.Team_Name
     });
   }
@@ -51,7 +53,9 @@ const login = async (email, password) => {
     details.push({
         Identity: 'Administrator',
         id: admin.Administrator_ID,
+        department_id : admin.Department_ID,
         department: admin.Department_Name,
+        team_id: admin.Team_ID,
         team: admin.Team_Name,
         Position: admin.Position,
         Ex_number: admin.Ex_number

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import SOPCard from '../components/SOPCard';
 import { useAuth } from '../hooks/useAuth';
 
+
 export default function MySOPList() {
+
     const { user, loading: isAuthLoading } = useAuth();
     const navigate = useNavigate();
 
@@ -18,6 +21,7 @@ export default function MySOPList() {
     const [newTitle, setNewTitle] = useState('');
     const [newDesc, setNewDesc] = useState('');
     const [isCreating, setIsCreating] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
     const pageSize = 8;
     const totalPages = Math.ceil(total / pageSize);
@@ -113,53 +117,54 @@ export default function MySOPList() {
         fetchSops({ keyword, pageNum: next });
     };
 
-    const handleCreateSop = async () => {
-        if (!newTitle.trim()) return alert('請輸入 SOP 標題');
+  const handleCreateSop = async () => {
+    if (!newTitle.trim()) return alert('請輸入 SOP 標題');
 
-        try {
-            setIsCreating(true);
-            const res = await fetch('/api/sops/create', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    SOP_Name: newTitle,
-                    SOP_Content: newDesc,
-                    Team_in_charge: user.team, // 傳 Team_ID
-                }),
-            });
+    try {
+      setIsCreating(true);
+      const res = await fetch('/api/sops/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          SOP_Name: newTitle,
+          SOP_Content: newDesc,
+          Team_in_charge: user.team,
+        }),
+      });
 
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.message || '新增失敗');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || '新增失敗');
 
-            const newSopId = json.sop?.id || json.data?.SOP_ID;
-            navigate(`/module/${newSopId}/create`);
-        } catch (err) {
-            console.error('新增失敗，進入模擬模式：', err.message);
-            navigate(`/module/TEMP-ID/create`);
-        } finally {
-            setIsCreating(false);
-        }
-    };
-    const handleTogglePublish = async (sopId, nextStatus) => {
-        try {
-            const response = await fetch(`/api/sops/${sopId}/update_publish?is_publish=${nextStatus}`, {
-                method: 'PUT',
-            });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || '更新失敗');
-
-            console.log('✅ 發佈狀態更新成功:', result);
-
-            setSops((prev) =>
-                prev.map((sop) =>
-                    sop.id === sopId ? { ...sop, published: nextStatus } : sop
-                )
-            );
-        } catch (err) {
-            console.error('❌ 發佈狀態更新失敗:', err.message);
-        }
-    };
+      const newSopId = json.sop?.id || json.data?.SOP_ID;
+      navigate(`/module/${newSopId}/create`);
+    } catch (err) {
+      console.error('新增失敗，進入模擬模式：', err.message);
+      navigate(`/module/TEMP-ID/create`);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+  const handleTogglePublish = async (sopId, nextStatus) => {
+    try {
+      const response = await fetch(`/api/sops/${sopId}/update_publish?is_publish=${nextStatus}`, {
+        method: 'PUT',
+      });
+  
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || '更新失敗');
+  
+      console.log('✅ 發佈狀態更新成功:', result);
+  
+      setSops((prev) =>
+        prev.map((sop) =>
+          sop.id === sopId ? { ...sop, published: nextStatus } : sop
+        )
+      );
+    } catch (err) {
+      console.error('❌ 發佈狀態更新失敗:', err.message);
+    }
+  };
+  
 
 
     if (isAuthLoading || !user)
@@ -172,7 +177,7 @@ export default function MySOPList() {
                 <Footer />
             </>
         );
-
+  
     return (
         <>
             <NavBar />
@@ -254,63 +259,56 @@ export default function MySOPList() {
                 </div>
 
                 <div className="bg-white border shadow-sm rounded-lg p-10 mt-20">
-                    <h2 className="text-2xl font-bold text-center mb-8">新增 SOP</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <label className="block text-sm font-semibold mb-1">標題</label>
-                            <input
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                                placeholder="輸入 SOP 標題"
-                                className="border w-full rounded px-4 py-2 text-sm"
-                            />
-                            <p className="text-xs text-gray-400 mt-1">最多 30 字</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold mb-1">簡介</label>
-                            <textarea
-                                value={newDesc}
-                                onChange={(e) => setNewDesc(e.target.value)}
-                                placeholder="輸入 SOP 簡介"
-                                rows={5}
-                                className="border w-full rounded px-4 py-2 text-sm resize-none"
-                            />
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleCreateSop}
-                        disabled={!newTitle.trim() || isCreating}
-                        className="bg-primary text-white px-10 py-3 rounded mt-8 hover:bg-primary/90 disabled:opacity-50 block mx-auto"
-                    >
-                        進入 Module 新增頁面
-                    </button>
+          <h2 className="text-2xl font-bold text-center mb-8">新增 SOP</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label className="block text-sm font-semibold mb-1">標題</label>
+              <input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="輸入 SOP 標題" className="border w-full rounded px-4 py-2 text-sm" />
+              <p className="text-xs text-gray-400 mt-1">最多 30 字</p>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">簡介</label>
+              <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="輸入 SOP 簡介" rows={5} className="border w-full rounded px-4 py-2 text-sm resize-none" />
+            </div>
+          </div>
+          <AlertDialog.Root open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+            <AlertDialog.Trigger asChild>
+              <button disabled={!newTitle.trim() || isCreating} className="bg-primary text-white px-10 py-3 rounded mt-8 hover:bg-primary/90 disabled:opacity-50 block mx-auto">
+                進入 Module 新增頁面
+              </button>
+            </AlertDialog.Trigger>
+            <AlertDialog.Portal>
+              <AlertDialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
+              <AlertDialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-6 w-[400px] z-50">
+                <AlertDialog.Title className="text-lg font-bold mb-2">確定要進入 Module 新增頁面？</AlertDialog.Title>
+                <AlertDialog.Description className="text-sm text-gray-600">
+                  進入後將無法返回 SOP 標題與簡介頁面。是否繼續？
+                </AlertDialog.Description>
+                <div className="flex justify-end gap-3 mt-6">
+                  <AlertDialog.Cancel asChild>
+                    <button className="px-4 py-2 border rounded text-sm">取消</button>
+                  </AlertDialog.Cancel>
+                  <AlertDialog.Action asChild>
+                    <button onClick={handleCreateSop} className="px-4 py-2 bg-primary text-white rounded text-sm hover:bg-primary/90">確認</button>
+                  </AlertDialog.Action>
                 </div>
-            </main>
+              </AlertDialog.Content>
+            </AlertDialog.Portal>
+          </AlertDialog.Root>
+        </div>
+      </main>
 
-            {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-10 mb-20">
-                    {Array.from({ length: totalPages }, (_, i) => (
-                        <button
-                            key={i + 1}
-                            onClick={() => handlePageClick(i + 1)}
-                            className={`px-3 py-1 rounded border ${i + 1 === page ? 'bg-primary text-white' : 'bg-white text-gray-700'
-                                }`}
-                        >
-                            {i + 1}
-                        </button>
-                    ))}
-                    {page < totalPages && (
-                        <button
-                            onClick={() => handlePageClick(page + 1)}
-                            className="px-3 py-1 rounded border bg-white text-gray-700"
-                        >
-                            下一頁 →
-                        </button>
-                    )}
-                </div>
-            )}
-
-            <Footer />
-        </>
-    );
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-10 mb-20">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button key={i + 1} onClick={() => handlePageClick(i + 1)} className={`px-3 py-1 rounded border ${i + 1 === page ? 'bg-primary text-white' : 'bg-white text-gray-700'}`}>{i + 1}</button>
+          ))}
+          {page < totalPages && (
+            <button onClick={() => handlePageClick(page + 1)} className="px-3 py-1 rounded border bg-white text-gray-700">下一頁 →</button>
+          )}
+        </div>
+      )}
+      <Footer />
+    </>
+  );
 }
