@@ -202,6 +202,8 @@ export default function ModuleEditPage() {
             title: m.Title,
             details: m.Details,                      // ✅ 修改 key 名
             person: m.staff_in_charge,
+            person_team: m.Team_Name,
+            person_name: m.User_Name,
             formLinks: Array.isArray(m.form_links)   // ✅ 修改 key 名
               ? m.form_links
               : [],
@@ -248,9 +250,11 @@ export default function ModuleEditPage() {
         type: 'step',
         data: {
           title: '',
-          detail: '',
+          details: '',
           person: '',
-          docs: '',
+          person_name: '',
+          person_team: '',
+          formLinks: [],
           onSave: (form) =>
             setNodes((prev) =>
               prev.map((n) =>
@@ -298,9 +302,11 @@ export default function ModuleEditPage() {
           Module_ID: n.id,
           Type: 'process',
           Title: n.data.title,
-          Details: n.data.detail,
+          Details: n.data.details,
           staff_in_charge: n.data.person,
-          form_links: n.data.docs ? [{ Link: n.data.docs }] : [],
+          form_links: Array.isArray(n.data.formLinks)
+          ? n.data.formLinks.filter(l => l.Link?.trim())
+          : [],
           x: n.position.x,
           y: n.position.y,
         };
