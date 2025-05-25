@@ -18,7 +18,6 @@ function formatTaiwanTime(utcString) {
   }
 }
 
-
 export default function SOPCard({
   sop,
   editable = false,
@@ -32,6 +31,7 @@ export default function SOPCard({
   const [historyList, setHistoryList] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const navigate = useNavigate();
+  const locked = sop?.status === 'updating';   // 新增做並行控制: 是否有人編輯中
 
   const fetchHistory = async () => {
     try {
@@ -54,6 +54,13 @@ export default function SOPCard({
   return (
     <div className="relative border rounded-lg p-4 bg-gray-50 flex flex-col justify-between h-60 max-w-xs shadow-sm hover:shadow-md transition-shadow">
       
+      {/* 🔒 編輯中標籤 */}
+      {locked && (
+        <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded">
+          🔒 編輯中：{sop.editor}
+        </span>
+      )}
+
       {/* ✅ 歷史版本 Modal */}
       {showHistory && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-20">
@@ -163,8 +170,14 @@ export default function SOPCard({
           <Link
             to={`/sop/${sop.id}/edit`}
             className="bg-primary text-white px-6 py-1.5 rounded hover:bg-primary/90 text-sm"
+            onClick={(e) => {
+              if (locked) {
+                e.preventDefault();
+                alert('目前有人正在編輯此 SOP，請稍後再試');
+              }
+            }}
           >
-            編輯
+            {locked ? '無法編輯' : '編輯'}
           </Link>
         )}
 
