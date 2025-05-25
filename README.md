@@ -122,7 +122,10 @@ Server is running on http://localhost:3000   (Express 後端 API)
 在終端機中輸入以下指令：
 
 ```bash
+//MAC
 which python3
+//Windows
+where python3
 ```
 
 📌 這會回傳你目前系統中的 Python3 執行路徑，例如：
