@@ -13,20 +13,28 @@ export default function EditSOPPage() {
 
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
+  const [teamId, setTeam_ID] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || authLoading || !user?.id)  return;
     const controller = new AbortController();
 
     (async () => {
       try {
         setError(null);
-        const res = await fetch(`${API_BASE}/api/sops/${id}/flowchart`, {
-          signal: controller.signal,
-        });
+        // 檢查是否有 Personal_ID
+        console.log("前端", user)
+        const queryParams = user?.id
+          ? `?Personal_ID=${encodeURIComponent(user.id)}`
+          : '';
+
+        const res = await fetch(
+          `${API_BASE}/api/sops/${id}/flowchart${queryParams}`,
+          { signal: controller.signal }
+        );
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
@@ -34,8 +42,9 @@ export default function EditSOPPage() {
 
         console.debug('[EditSOP] flowchart data', data);
 
-        setTitle(data.title ?? data.SOP_Name ?? '未命名 SOP');
-        setDesc(data.description ?? data.SOP_Content ?? '');
+        setTitle(data.SOP_Name ?? '未命名 SOP');
+        setDesc(data.SOP_Content ?? '');
+        setTeam_ID(data.Team_ID ?? '未命名 SOP');
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.error('[EditSOP] 讀取失敗：', err);
@@ -47,7 +56,7 @@ export default function EditSOPPage() {
     })();
 
     return () => controller.abort();
-  }, [id]);
+  }, [id, user?.id, authLoading]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -67,7 +76,7 @@ export default function EditSOPPage() {
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
         Team_in_charge: teamId,
-        Updated_by: user.username
+        Updated_by: user.adminId
       };
 
 
@@ -93,7 +102,7 @@ export default function EditSOPPage() {
     }
   };
 
-  if (loading) return (<><NavBar /><div className="text-center py-20">載入中…</div><Footer /></>);
+  if (loading  || title === "") return (<><NavBar /><div className="h-[600px] flex items-center justify-center text-center py-20">載入中…</div><Footer /></>);
   if (error) return (<><NavBar /><div className="text-center py-20 text-red-600">{error}</div><Footer /></>);
 
   return (
