@@ -45,6 +45,7 @@ export default function ModulePage() {
 
   const [sop, setSop] = useState(null);
   const [collected, setCollected] = useState(false);
+  const [view, setview] = useState(null);
 
   /* 取得 SOP 與流程圖 */
   useEffect(() => {
@@ -52,8 +53,10 @@ export default function ModulePage() {
       try {
         const res = await fetch(`/api/sops/${id}/flowchart`);
         if (!res.ok) throw new Error("fetch fail");
-        const { data } = await res.json();
+        const { views, data } = await res.json();
         setSop({ raw: data });
+        setview({ raw: views });
+
       } catch (err) {
         console.error("[ModulePage] 取得 SOP 失敗:", err);
       }
@@ -165,15 +168,22 @@ export default function ModulePage() {
 
   const nodeTypes = useMemo(() => ({ stepView: StepNodeView }), []);
 
-  if (!sop) {
-    return (
-      <>
-        <NavBar />
-        <div className="text-center py-20 text-gray-500">載入資料中，請稍候…</div>
-        <Footer />
-      </>
-    );
-  }
+if (!sop) {                
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* 頁首 */}
+      <NavBar />
+
+      {/* 置中顯示載入文字，並撐開空間 */}
+      <div className="flex-1 flex items-center justify-center py-20 text-gray-500">
+        載入資料中，請稍候…
+      </div>
+
+      {/* 頁尾永遠貼底 */}
+      <Footer />
+    </div>
+  );
+}
 
   const info = sop.raw;
   const formatDate = (dt) =>
@@ -217,7 +227,7 @@ export default function ModulePage() {
             </p>
             <p className="mt-1">
               <strong>SOP 瀏覽次數：</strong>
-              {Number(info.views) || 0}
+              {typeof view?.raw === 'number' ? view.raw : 0}
             </p>
           </aside>
 
@@ -229,7 +239,13 @@ export default function ModulePage() {
               </div>
             ) : (
               <div
-                className="relative w-full"
+                className="
+                  relative w-full
+                  border border-gray-300
+                  shadow-sm
+                  rounded-lg
+                  bg-gray-50        /* 淡灰底 */
+                "
                 style={{ height: rfData.height }}
               >
                 <ReactFlow

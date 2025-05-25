@@ -55,10 +55,12 @@ export default function StepNodeView({ data }) {
           <div
             title={data.title}
             className="bg-gray-100 hover:bg-gray-200 rounded-lg
-              px-4 py-2 text-center text-sm w-[240px] h-[80px] flex items-center justify-center
-              border border-slate-400 cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap"
+              px-4 py-2 text-sm w-[240px] h-[80px] flex items-center justify-center text-center
+              border border-slate-400 cursor-pointer overflow-hidden"
           >
-            {data.brief}
+            <span className="block w-full text-ellipsis whitespace-nowrap overflow-hidden">
+              {data.title}
+            </span>
           </div>
         </Dialog.Trigger>
         <Dialog.Portal>
