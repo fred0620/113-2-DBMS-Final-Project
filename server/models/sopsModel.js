@@ -291,7 +291,7 @@ const gethistorylist = async (sopId) => {
 
 async function insertSOPLog(sopId, adminId, logText) {
   try {
-    const conn = await pool.getConnection();
+    const conn = await db.getConnection();
     await conn.execute(
       `INSERT INTO SOP_log (SOP_ID, Administrator_ID, log)
        VALUES (?, ?, ?)`,
