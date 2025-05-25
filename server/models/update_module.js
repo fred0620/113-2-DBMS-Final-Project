@@ -88,6 +88,7 @@ const create_module = async (module,editor, sopId, version, connection) => {
       };
     } catch (error) {
       console.error('Error creating modules:', error);
+        throw error;
       return {
         success: false,
         message: 'Failed to create modules',
@@ -165,6 +166,7 @@ const create_module = async (module,editor, sopId, version, connection) => {
       };
     } catch (error) {
       console.error('Error updating modules:', error);
+        throw error;
       return {
         success: false,
         message: 'Failed to update modules',
