@@ -21,13 +21,19 @@ const update_edges = async (edges,version, connection) => {
 
 const create_module = async (module,editor, sopId, version, connection) => {
     try {
-      
+
+        // 空字串轉 null
+        let staffInCharge = module.staff_in_charge;
+        if (!staffInCharge || staffInCharge.trim() === '') {
+          staffInCharge = null;
+        }
+        
       const values =  [
         module.Type,
         module.Title,
         module.Details,
         sopId,
-        module.staff_in_charge,
+        staffInCharge,
         version,
         editor,
         module.action
@@ -87,17 +93,23 @@ const create_module = async (module,editor, sopId, version, connection) => {
       const clientIdToModuleIdMap = {};
       
       // 1. 準備批量插入資料
-      const values = modules.map(module => [
-        module.Module_ID,
-        module.Type,
-        module.Title,
-        module.Details,
-        sopId,
-        module.staff_in_charge,
-        version,
-        editor,
-        module.action
-      ]);
+      const values = modules.map(module => {
+          let staffInCharge = module.staff_in_charge;
+          if (!staffInCharge || staffInCharge.trim() === '') {
+            staffInCharge = null;
+          }
+          return [
+            module.Module_ID,
+            module.Type,
+            module.Title,
+            module.Details,
+            sopId,
+            staffInCharge,
+            version,
+            editor,
+            module.action
+          ];
+        });
       
       const placeholders = modules.map(() => '(?,?,?,?,?,?,?,?,?)').join(',');
       const flatValues = values.flat();
