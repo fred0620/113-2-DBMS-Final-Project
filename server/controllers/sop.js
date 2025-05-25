@@ -88,9 +88,9 @@ const createSOP = async (req, res, next) => {
       [newSop.id, Created_by, 'create']
     );
     await db.query(
-      `INSERT INTO Module (SOP_ID, Version, Type, Title, Details)
-       VALUES (?, 1, 'start', '尚未建立Module', '')`,
-      [newSop.id]
+      `INSERT INTO Module (SOP_ID, Version, Type, Title, Details, Update_by)
+       VALUES (?, 1, 'start', '尚未建立Module', '',  ?)`,
+      [newSop.id,Created_by]
     );
 
     

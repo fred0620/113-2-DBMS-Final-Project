@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
-import StepNodeEdit from '../components/StepNodeEdit'; // 路徑依實際調整
+import StepNodeEdit from '../components/StepNodeEdit'; 
+//新增用來排版的
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import dagre from 'dagre';                       // ← 新增
 
 import ReactFlow, {
   Background,
@@ -25,6 +27,27 @@ import 'reactflow/dist/style.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const PRIMARY = '#0f307a';
+
+/* 新增做排版的--- dagre layout 參數與工具函式 --- */
+const NODE_W = 240;
+const NODE_H = 80;
+function autoLayout(nodes, edges, dir = 'TB') {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: dir, nodesep: 120, ranksep: 100 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }));
+  edges.forEach((e) => g.setEdge(e.source, e.target));
+  dagre.layout(g);
+
+  let maxY = 0;
+  const laid = nodes.map((n) => {
+    const p = g.node(n.id);
+    maxY = Math.max(maxY, p.y);
+    return { ...n, position: { x: p.x - NODE_W / 2, y: p.y - NODE_H / 2 } };
+  });
+  return { nodes: laid, height: maxY + NODE_H + 120 };
+}
 
 /* ──────────── StepNode（Modal 與 CreatePage 同版型） ──────────── */
 /*
@@ -202,6 +225,7 @@ export default function ModuleEditPage() {
             y: m.y ?? (Math.floor(idx / 4) * 140 + 60),
           },
           type: 'step',
+          style: { width: NODE_W, height: NODE_H },
           data: {
             title: m.Title,
             details: m.Details,                      // ✅ 修改 key 名
@@ -229,11 +253,14 @@ export default function ModuleEditPage() {
           id: `${e.from_module}-${e.to_module}`,
           source: e.from_module,
           target: e.to_module,
+          type: 'straight',
           markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
           style: { stroke: PRIMARY, strokeWidth: 1.5 },
         }));
 
-        setNodes(rfNodes);
+        //新增做排版的
+        const { nodes: laid } = autoLayout(rfNodes, rfEdges);
+        setNodes(laid);
         setEdges(rfEdges);
       } catch (err) {
         console.error('[ModuleEditPage] 載入流程失敗：', err);
@@ -241,57 +268,66 @@ export default function ModuleEditPage() {
     })();
   }, [id]);
 
-  /* 2. 新增 / 刪除 / 連線 */
+  /* 修改做排版的 */
   const handleAddNode = () => {
-    const newId = nanoid(6); // 不以 M 開頭 → 新節點
-    const yMax = nodes.length
-      ? Math.max(...nodes.map((n) => n.position.y))
-      : 0;
-    setNodes((nds) =>
-      nds.concat({
-        id: newId,
-        position: { x: 400, y: yMax + 160 },
-        type: 'step',
-        data: {
-          title: '',
-          details: '',
-          person: '',
-          person_name: '',
-          person_team: '',
-          formLinks: [],
-          onSave: (form) =>
-            setNodes((prev) =>
-              prev.map((n) =>
-                n.id === newId ? { ...n, data: { ...n.data, ...form } } : n
-              )
-            ),
-          onDelete: () => handleDeleteNode(newId),
-        },
-      })
-    );
+  const newId = nanoid(6);
+
+  const newNode = {
+    id: newId,
+    type: 'step',
+    data: {
+      title: '',
+      detail: '',
+      person: '',
+      docs: [],
+      type: 'process',
+      onSave: (u) =>
+        setNodes((curr) =>
+          curr.map((n) =>
+            n.id === newId ? { ...n, data: { ...n.data, ...u } } : n
+          )
+        ),
+      onDelete: () => handleDeleteNode(newId),
+    },
+    position: { x: 0, y: 0 },           // 先給 0，排版後會被覆蓋
+    style: { width: NODE_W, height: NODE_H },
   };
 
-  const handleDeleteNode = (nodeId) => {
-    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
-    setEdges((eds) =>
-      eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
-    );
+  setNodes((prev) => {
+    const next = [...prev, newNode];
+    return autoLayout(next, edges).nodes; // 重新排版
+  });
+};
+
+  //修改做排版的
+  const handleDeleteNode = (id) => {
+    const nextNodes = nodes.filter((n) => n.id !== id);
+    const nextEdges = edges.filter((e) => e.source !== id && e.target !== id);
+    const { nodes: laid } = autoLayout(nextNodes, nextEdges);
+    setNodes(laid);
+    setEdges(nextEdges);
   };
 
-  const onConnect = useCallback(
-    (params) =>
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
-            style: { stroke: PRIMARY, strokeWidth: 1.5 },
-          },
-          eds
-        )
-      ),
-    [setEdges]
-  );
+const onConnect = useCallback(
+  (params) => {
+    const straightEdge = {
+      ...params,
+      type: 'straight',                              // 直線而非貝茲曲線
+      markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
+      style: { stroke: PRIMARY, strokeWidth: 1.5 },
+    };
+
+    setEdges((eds) => {
+      const nextEdges = addEdge(straightEdge, eds);
+
+      // 重新 dagre layout，讓節點位置與直線對齊
+      setNodes((prev) => autoLayout(prev, nextEdges).nodes);
+
+      return nextEdges;
+    });
+  },
+  [edges]                                            // 依賴 edges 即可
+);
 
   const nodeTypes = useMemo(() => ({ step: StepNodeEdit }), []);
 
@@ -369,6 +405,11 @@ export default function ModuleEditPage() {
             nodeTypes={nodeTypes}
             fitView
             proOptions={{ hideAttribution: true }}
+            defaultEdgeOptions={{
+              type: 'straight',                               // 👈 讓所有邊預設直線
+              markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
+              style: { stroke: PRIMARY, strokeWidth: 1.5 },
+            }}
           >
             <Background gap={18} size={1.5} />
             <MiniMap />

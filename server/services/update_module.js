@@ -33,11 +33,22 @@ const processModules = async (modules, editor, sopId, version, edges ) => {
   
     // 2. 處理 update_modules 更新資料
     if (update_modules.length > 0) {
-      await update_module(update_modules,editor, sopId, version, connection); // 假設這是你處理更新的函數
+          console.log(`開始更新 ${update_modules.length} 個 modules`);
+        await update_module(update_modules,editor, sopId, version, connection); // 假設這是你處理更新的函數
+    } else {
+        console.log('沒有 modules 需要更新');
     }
     
-    const edges_v2= await transformEdges(edges, clientIdToModuleIdMap);
-    await update_edges(edges_v2, version, connection)
+     if (Array.isArray(edges) && edges.length > 0) {
+      const edges_v2 = await transformEdges(edges, clientIdToModuleIdMap);
+      if (edges_v2.length > 0) {
+        await update_edges(edges_v2, version, connection);
+      } else {
+        console.log('⚠️ transformEdges 回傳空陣列，跳過 update_edges');
+      }
+    } else {
+      console.log('⚠️ edges 是空陣列或不存在，跳過 update_edges');
+    }
 
     
     await connection.commit();    // ✅ 提交交易
