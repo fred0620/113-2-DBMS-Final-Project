@@ -2,6 +2,11 @@
 const db=require('../config/db')
 
 const update_edges = async (edges,version, connection) => {
+    if (!edges || edges.length === 0) {
+        console.log('⚠️ No edges to update.');
+        return;
+    }
+
     
     // 準備插入的資料
     const insEdges = edges.map(edge => [
