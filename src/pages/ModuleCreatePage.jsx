@@ -219,6 +219,7 @@ export default function ModuleCreatePage() {
 
       if (!res.ok) throw new Error('HTTP ' + res.status);
       alert('儲存成功！');
+      navigate('/mypage');
     } catch (err) {
       console.error('[ModuleCreatePage] 儲存錯誤：', err);
       alert('儲存失敗，請稍後再試');

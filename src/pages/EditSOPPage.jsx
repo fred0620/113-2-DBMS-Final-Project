@@ -13,7 +13,8 @@ export default function EditSOPPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth(); // 取得登入者資訊
   //新增做並行控制
-  useSopEditLock(id, user);
+const locked = useSopEditLock(id, user);
+if (locked) return null;
 
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
