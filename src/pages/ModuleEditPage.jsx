@@ -203,7 +203,8 @@ export default function ModuleEditPage() {
   const navigate = useNavigate();
   const { user } = useAuth(); // 取得登入者（302912/Q03）
   //新增做並行控制
-  useSopEditLock(id, user);
+const locked = useSopEditLock(id, user);
+if (locked) return null;
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -217,7 +218,6 @@ export default function ModuleEditPage() {
         const { data } = await res.json();
         const { nodes: backendNodes = [], edges: backendEdges = [] } = data;
 
-        /* nodes 轉換 */
         const rfNodes = backendNodes.map((m, idx) => ({
           id: m.Module_ID,
           position: {
@@ -228,11 +228,11 @@ export default function ModuleEditPage() {
           style: { width: NODE_W, height: NODE_H },
           data: {
             title: m.Title,
-            details: m.Details,                      // ✅ 修改 key 名
+            details: m.Details,                      
             person: m.staff_in_charge,
             person_team: m.Team_Name,
             person_name: m.User_Name,
-            formLinks: Array.isArray(m.form_links)   // ✅ 修改 key 名
+            formLinks: Array.isArray(m.form_links)   
               ? m.form_links
               : [],
 
@@ -268,7 +268,6 @@ export default function ModuleEditPage() {
     })();
   }, [id]);
 
-  /* 修改做排版的 */
   const handleAddNode = () => {
   const newId = nanoid(6);
 
@@ -289,13 +288,13 @@ export default function ModuleEditPage() {
         ),
       onDelete: () => handleDeleteNode(newId),
     },
-    position: { x: 0, y: 0 },           // 先給 0，排版後會被覆蓋
+    position: { x: 0, y: 0 },           
     style: { width: NODE_W, height: NODE_H },
   };
 
   setNodes((prev) => {
     const next = [...prev, newNode];
-    return autoLayout(next, edges).nodes; // 重新排版
+    return autoLayout(next, edges).nodes; 
   });
 };
 
@@ -312,7 +311,7 @@ const onConnect = useCallback(
   (params) => {
     const straightEdge = {
       ...params,
-      type: 'straight',                              // 直線而非貝茲曲線
+      type: 'straight',                              
       markerEnd: { type: MarkerType.ArrowClosed, color: PRIMARY },
       style: { stroke: PRIMARY, strokeWidth: 1.5 },
     };
@@ -320,13 +319,12 @@ const onConnect = useCallback(
     setEdges((eds) => {
       const nextEdges = addEdge(straightEdge, eds);
 
-      // 重新 dagre layout，讓節點位置與直線對齊
       setNodes((prev) => autoLayout(prev, nextEdges).nodes);
 
       return nextEdges;
     });
   },
-  [edges]                                            // 依賴 edges 即可
+  [edges]                                            
 );
 
   const nodeTypes = useMemo(() => ({ step: StepNodeEdit }), []);
@@ -334,9 +332,8 @@ const onConnect = useCallback(
   /* 3. 儲存至後端 */
   const handleSave = async () => {
     try {
-      // modules
       const modules = nodes.map((n) => {
-        const isNew = !/^M\d+$/.test(n.id); // M開頭=既有
+        const isNew = !/^M\d+$/.test(n.id); // 
         return {
           action: isNew ? 'create' : 'update',
           Module_ID: n.id,
@@ -352,7 +349,6 @@ const onConnect = useCallback(
         };
       });
 
-      // edges
       const edgesData = edges.map((e) => ({
         from_module: e.source,
         to_module: e.target,
@@ -377,7 +373,7 @@ const onConnect = useCallback(
       }
 
       alert('儲存成功！');
-      // navigate(-1); // 成功後若要回上一頁就打開
+      navigate('/mypage');
     } catch (err) {
       console.error('[ModuleEditPage] 儲存錯誤：', err);
       alert('儲存失敗，請稍後再試');
