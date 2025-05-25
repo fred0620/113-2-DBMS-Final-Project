@@ -4,6 +4,7 @@ const { insertSOPLog } = require('../models/sopsModel');
 
 // 處理來自前端的 POST 請求
 const recordModules = async (req, res) => {
+    console.log('📥 前端傳來的 modules 資料:', req.body);  
     const sopId = req.params.sop_id;
     const { modules,  edges, Updated_by } = req.body;  // 從請求中獲取資料
     const version = await getSopVersion(sopId)
