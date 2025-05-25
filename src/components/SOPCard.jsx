@@ -168,20 +168,20 @@ export default function SOPCard({
 
         {editable && (
           <Link
-            to={sop.Status === 'updating' ? '#' : `/sop/${sop.id}/edit`}
+            to={locked ? '#' : `/sop/${sop.id}/edit`}
             className={`px-6 py-1.5 rounded text-sm ${
-              sop.Status === 'updating'
-                ? 'bg-gray-400 cursor-not-allowed text-white'
+              locked 
+                ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-primary text-white hover:bg-primary/90'
             }`}
             onClick={(e) => {
-              if (sop.Status === 'updating') {
+              if (locked) {
                 e.preventDefault();
-                alert('目前有人正在編輯此 SOP，請稍後再試');
+                alert(`此 SOP 正由 ${sop.editor || '其他人'} 編輯中，請稍後再試`);
               }
             }}
 >
-            {sop.Status === 'updating' ? '無法編輯' : '編輯'}
+            {locked ? '無法編輯' : '編輯'}
           </Link>
         )}
 
