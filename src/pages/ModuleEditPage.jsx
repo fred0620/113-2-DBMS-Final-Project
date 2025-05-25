@@ -17,6 +17,8 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { nanoid } from 'nanoid';
 import { useAuth } from '../hooks/useAuth';
+//新增做並行控制
+import useSopEditLock from '../hooks/useSopEditLock';
 import 'reactflow/dist/style.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -174,6 +176,8 @@ export default function ModuleEditPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth(); // 取得登入者（302912/Q03）
+  //新增做並行控制
+  useSopEditLock(id, user);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);

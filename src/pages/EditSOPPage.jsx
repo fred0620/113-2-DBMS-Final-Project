@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth'; 
+//新增做並行控制
+import useSopEditLock from '../hooks/useSopEditLock';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -10,6 +12,8 @@ export default function EditSOPPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth(); // 取得登入者資訊
+  //新增做並行控制
+  useSopEditLock(id, user);
 
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
@@ -66,7 +70,7 @@ export default function EditSOPPage() {
         SOP_ID: id,
         SOP_Name: title.trim(),
         SOP_Content: desc.trim(),
-        Team_in_charge: teamId,
+        Team_in_charge: teamId,//
         Updated_by: user.username
       };
 
