@@ -118,7 +118,7 @@ const create_module = async (module,editor, sopId, version, connection) => {
       
       const placeholders = modules.map(() => '(?,?,?,?,?,?,?,?,?)').join(',');
       const flatValues = values.flat();
-
+        console.log('✅ SQL values:', flatValues);
       // 2. Insert到Module
       await connection.execute(`
         INSERT INTO Module (Module_ID, Type, Title, Details, SOP_ID, staff_in_charge, Version, Update_by, Action)
