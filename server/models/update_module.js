@@ -32,11 +32,14 @@ const create_module = async (module,editor, sopId, version, connection) => {
         if (!staffInCharge || staffInCharge.trim() === '') {
           staffInCharge = null;
         }
-        
+        let details = module.Details;
+              if (details === undefined || details === '') {
+                details = null;
+              }
       const values =  [
         module.Type,
         module.Title,
-        module.Details,
+        details,
         sopId,
         staffInCharge,
         version,
@@ -103,11 +106,16 @@ const create_module = async (module,editor, sopId, version, connection) => {
           if (!staffInCharge || staffInCharge.trim() === '') {
             staffInCharge = null;
           }
+          let details = module.Details;
+              if (details === undefined || details === '') {
+                details = null;
+              }
+          
           return [
             module.Module_ID,
             module.Type,
             module.Title,
-            module.Details,
+            details,
             sopId,
             staffInCharge,
             version,
