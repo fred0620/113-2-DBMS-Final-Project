@@ -20,18 +20,15 @@ export default function StepNodeView({ data }) {
 
     (async () => {
       try {
-        const res = await fetch(`/api/sops/${data.id}/display`);
-        if (!res.ok) throw new Error("Fetch failed");
-        const result = await res.json();
         setExtraInfo({
-          title: result.Title || "",
-          details: result.Details || "",
-          userName: result.User_Name || "",
-          department: result.Department || "",
-          team: result.Team || "",
-          exNumber: result.Ex_number || "",
-          email: result.Email || "",
-          formLinks: result.form_links || [],
+          title: data.title || "",
+          details: data.details || "",
+          userName: data.person_name || "",
+          department: data.departmentname || "",
+          team: data.team_name || "",
+          exNumber: data.Ex_number || "",
+          email: data.email || "",
+          formLinks: data.formLinks || [],
         });
       } catch (err) {
         console.error("[StepNodeView] 無法取得模組資訊:", err);
@@ -118,7 +115,7 @@ export default function StepNodeView({ data }) {
                           rel="noopener noreferrer"
                           className="text-blue-600 underline break-all"
                         >
-                          {f.Link}
+                          {f.Link_Name || f.Link}
                         </a>
                       </li>
                     ))}
@@ -126,6 +123,7 @@ export default function StepNodeView({ data }) {
                 </section>
               </>
             )}
+
 
             <Dialog.Close className="mt-4 inline-block px-4 py-2 bg-primary text-white rounded text-sm">
               關閉
