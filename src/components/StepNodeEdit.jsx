@@ -1,18 +1,23 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
 import * as Dialog from '@radix-ui/react-dialog';
 
 export default function StepNodeEdit({ data, isFirst, isLast }) {
   const safeLinks = Array.isArray(data.formLinks)
-    ? data.formLinks.map((x) => typeof x === 'string' ? x : x?.Link || '')
-    : [''];
+    ? data.formLinks.map((x) =>
+        typeof x === 'string' ? { Link: x, Link_Name: '' } : {
+          Link: x?.Link || '',
+          Link_Name: x?.Link_Name || ''
+        }
+      )
+    : [{ Link: '', Link_Name: '' }];
 
   const [form, setForm] = useState({
     title: data.title || '',
     details: data.details || '',
     person: data.person || '',
     personName: '',
-    formLinks: safeLinks.length > 0 ? safeLinks : [''],
+    formLinks: safeLinks.length > 0 ? safeLinks : [{ Link: '', Link_Name: '' }],
   });
 
   const [open, setOpen] = useState(false);
@@ -21,10 +26,18 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    if (!searchTerm) return;
     const delay = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/users/search?keyword=${searchTerm}`, {
+        let url;
+        if (Array.isArray(data.persons) && data.persons.length > 0) {
+          url = '/api/users/search';
+        } else {
+          url = searchTerm.trim()
+            ? `/api/users/search?keyword=${searchTerm.trim()}`
+            : '/api/users/search';
+        }
+
+        const res = await fetch(url, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error('fetch failed');
@@ -38,20 +51,20 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
       clearTimeout(delay);
       controller.abort();
     };
-  }, [searchTerm]);
+  }, [searchTerm, data.persons]);
 
   const handleChange = (key, val) => {
     setForm((prev) => ({ ...prev, [key]: val }));
   };
 
-  const handleFormLinkChange = (i, val) => {
+  const handleFormLinkChange = (i, key, val) => {
     const updated = [...form.formLinks];
-    updated[i] = val;
+    updated[i] = { ...updated[i], [key]: val };
     setForm((prev) => ({ ...prev, formLinks: updated }));
   };
 
   const addFormLinkField = () => {
-    setForm((prev) => ({ ...prev, formLinks: [...prev.formLinks, ''] }));
+    setForm((prev) => ({ ...prev, formLinks: [...prev.formLinks, { Link: '', Link_Name: '' }] }));
   };
 
   const handleSave = () => {
@@ -64,9 +77,7 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
       ...form,
       docs: undefined,
       staff_in_charge: form.person,
-      formLinks: form.formLinks
-        .filter((url) => url.trim())
-        .map((url) => ({ Link: url })),
+      formLinks: form.formLinks.filter((l) => l.Link.trim())
     };
 
     data.onSave?.(formatted);
@@ -92,7 +103,7 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
             aria-label="編輯模組"
           >
             <Dialog.Title className="text-xl font-bold mb-4">
-              編輯 Module – {data.id}
+              編輯 Module {data.id}
             </Dialog.Title>
 
             <div>
@@ -119,7 +130,7 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="搜尋姓名或 ID"
+                placeholder="搜尋姓名或部門"
                 className="border rounded w-full px-3 py-1.5"
               />
               <select
@@ -130,21 +141,29 @@ export default function StepNodeEdit({ data, isFirst, isLast }) {
                 <option value="">請選擇負責人</option>
                 {personOptions.map((p) => (
                   <option key={p.Personal_ID} value={p.Personal_ID}>
-                    {p.User_Name}（{p.Personal_ID}）
+                    {p.User_Name}（{p.Team_Name}）
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">相關連結/文件 (URL)</label>
+              <label className="block font-semibold mb-1">相關連結/文件</label>
               {form.formLinks.map((link, idx) => (
-                <input
-                  key={idx}
-                  value={link}
-                  onChange={(e) => handleFormLinkChange(idx, e.target.value)}
-                  className="mb-2 border rounded w-full px-3 py-1.5"
-                />
+                <div key={idx} className="flex gap-2 mb-2">
+                  <input
+                    value={link.Link_Name}
+                    onChange={(e) => handleFormLinkChange(idx, 'Link_Name', e.target.value)}
+                    placeholder="名稱"
+                    className="w-1/3 border rounded px-3 py-1.5"
+                  />
+                  <input
+                    value={link.Link}
+                    onChange={(e) => handleFormLinkChange(idx, 'Link', e.target.value)}
+                    placeholder="URL"
+                    className="w-2/3 border rounded px-3 py-1.5"
+                  />
+                </div>
               ))}
               <button
                 onClick={addFormLinkField}

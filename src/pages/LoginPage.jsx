@@ -18,7 +18,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      // console.log('✅ 後端回傳的整體資料:', data);
+      console.log('✅ 後端回傳的整體資料:', data);
   
       if (!res.ok) throw new Error(data.error || data.message || '登入失敗');
   
