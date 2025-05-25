@@ -121,9 +121,15 @@ Server is running on http://localhost:3000   (Express 後端 API)
 
 在終端機中輸入以下指令：
 
+Mac
 ```bash
 which python3
 ```
+Windows
+```bash
+where python3
+```
+
 
 📌 這會回傳你目前系統中的 Python3 執行路徑，例如：
 
@@ -136,13 +142,16 @@ which python3
 ```bash
 python3 -m pip list | grep openpyxl
 ```
+Windows
+```bash
+python -m pip list | findstr openpyxl
+```
 
 若未安裝，請使用 pip 安裝：
 
 ```bash
 pip install openpyxl
 ```
-
 ---
 
 ## 🛠️ 步驟二：設定 `.env` 檔（可選）
