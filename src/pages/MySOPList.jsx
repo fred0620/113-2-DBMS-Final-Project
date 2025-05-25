@@ -129,6 +129,7 @@ export default function MySOPList() {
           SOP_Name: newTitle,
           SOP_Content: newDesc,
           Team_in_charge: user.team,
+          Created_by: user.adminId
         }),
       });
 

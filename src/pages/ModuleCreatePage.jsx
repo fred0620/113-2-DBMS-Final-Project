@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import StepNodeEdit from '../components/StepNodeEdit'; 
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 import ReactFlow, {
@@ -20,6 +21,7 @@ import 'reactflow/dist/style.css';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const PRIMARY = '#0f307a';
+
 
 function StepNode({ data, selected }) {
   const [open, setOpen] = useState(false);
@@ -193,9 +195,11 @@ export default function ModuleCreatePage() {
         Module_ID: node.id,
         Type: 'process',
         Title: node.data.title,
-        Details: node.data.detail,
+        Details: node.data.details,
         staff_in_charge: node.data.person,
-        form_links: Array.isArray(node.data.docs) ? node.data.docs.filter((d) => d.Link && d.Link.trim()) : [],
+        form_links: Array.isArray(node.data.formLinks)
+        ? node.data.formLinks.filter(l => l.Link?.trim())
+        : [],
       }));
 
       const edgesData = edges.map((e) => ({
@@ -221,7 +225,7 @@ export default function ModuleCreatePage() {
     }
   };
 
-  const nodeTypes = useMemo(() => ({ step: StepNode }), []);
+  const nodeTypes = useMemo(() => ({ step: StepNodeEdit }), []);
 
   return (
     <>
