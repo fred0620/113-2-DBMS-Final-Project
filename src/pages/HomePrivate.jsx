@@ -7,11 +7,10 @@ export default function HomePrivate() {
     <div className="flex flex-col min-h-screen">
       <NavBar />
 
-      {/* 中間淺藍色滿版區塊 */}
-      <main className="flex-grow bg-secondary flex items-center justify-center">
+      <main className="flex-1 bg-secondary flex items-center justify-center">
         <div className="text-center w-full max-w-4xl px-4 py-12">
-          <h1 className="text-2xl font-bold text-primary mb-6">
-            政大SOP整合系統 NCCU SOP Center
+          <h1 className="text-4xl font-bold text-primary mb-6">
+            政大SOP整合系統&nbsp;NCCU SOP Center
           </h1>
           <SearchBar />
         </div>

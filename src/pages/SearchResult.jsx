@@ -21,7 +21,7 @@ export default function SearchResultPage() {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
-      if (page) queryParams.append('page', page); // ✅ page 傳給 API
+      if (page) queryParams.append('page', page);
       if (keyword) queryParams.append('keyword', keyword);
       if (dept) queryParams.append('department', dept);
       if (group) queryParams.append('team', group);
@@ -47,7 +47,7 @@ export default function SearchResultPage() {
   // 🔍 使用者點搜尋時
   const handleSearch = (keyword, dept, group) => {
     const query = new URLSearchParams({
-      page: 'normal', // ✅ 改成 page 而非 pageType
+      page: 'normal',
       keyword,
       dept,
       group,
@@ -60,16 +60,16 @@ export default function SearchResultPage() {
   const goToPage = (pageNum) => {
     const params = new URLSearchParams(location.search);
     const keyword = params.get('keyword') || '';
-    const dept = params.get('dept') || '';
-    const group = params.get('group') || '';
-    const page = params.get('page') || 'normal'; // ✅ 保持 page 命名一致
+    const dept    = params.get('dept')    || '';
+    const group   = params.get('group')   || '';
+    const page    = params.get('page')    || 'normal';
 
     const query = new URLSearchParams({
       keyword,
       dept,
       group,
       page,
-      pageNum: pageNum,
+      pageNum
     }).toString();
 
     navigate(`/search?${query}`);
@@ -77,30 +77,32 @@ export default function SearchResultPage() {
 
   // 🔁 每次網址變化時（如搜尋、換頁）
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params  = new URLSearchParams(location.search);
     const keyword = params.get('keyword') || '';
-    const dept = params.get('dept') || '';
-    const group = params.get('group') || '';
+    const dept    = params.get('dept')    || '';
+    const group   = params.get('group')   || '';
     const pageNum = parseInt(params.get('pageNum')) || 1;
-    const page = params.get('page') || 'normal';
+    const page    = params.get('page') || 'normal';
 
     fetchData({ keyword, dept, group, page });
     setCurrentPage(pageNum);
   }, [location.search]);
 
-
   // ✂️ 前端切頁（slice）
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
+  const startIndex  = (currentPage - 1) * pageSize;
+  const endIndex    = startIndex + pageSize;
   const visibleSops = sops.slice(startIndex, endIndex);
 
+  // ─── 把整個頁面包成 flex-col + min-h-screen ──
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
+      {/* 頁首 */}
       <NavBar />
 
+      {/* 搜尋 header */}
       <header className="bg-secondary py-12 text-center">
         <h1 className="text-2xl font-bold text-primary mb-6">
-          政大SOP整合系統 NCCU SOP Center
+          政大SOP整合系統&nbsp;NCCU SOP Center
         </h1>
         <SearchBar
           defaultKeyword={new URLSearchParams(location.search).get('keyword') || ''}
@@ -110,8 +112,9 @@ export default function SearchResultPage() {
         />
       </header>
 
-      <main className="py-10 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      {/* 主內容區：flex-1 撐開空間 */}
+      <main className="flex-1 py-10 px-6 flex flex-col">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 flex-grow">
           {loading ? (
             <div className="col-span-full text-center text-gray-500 py-16">
               載入中...
@@ -128,31 +131,35 @@ export default function SearchResultPage() {
             </div>
           )}
         </div>
+
+        {/* 分頁按鈕 放在 main 裡 保持在底部 */}
+        <div className="flex justify-center items-center gap-2 mt-8">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => goToPage(i + 1)}
+              className={`px-3 py-1 rounded border ${
+                i + 1 === currentPage
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+          {currentPage < totalPages && (
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              className="px-3 py-1 rounded border bg-white text-gray-700"
+            >
+              下一頁 →
+            </button>
+          )}
+        </div>
       </main>
 
-      {/* 分頁按鈕 */}
-      <div className="flex justify-center items-center gap-2 mb-12">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i + 1}
-            onClick={() => goToPage(i + 1)}
-            className={`px-3 py-1 rounded border ${i + 1 === currentPage ? 'bg-primary text-white' : 'bg-white text-gray-700'
-              }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-        {currentPage < totalPages && (
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            className="px-3 py-1 rounded border bg-white text-gray-700"
-          >
-            下一頁 →
-          </button>
-        )}
-      </div>
-
+      {/* 頁尾永遠貼底 */}
       <Footer />
-    </>
+    </div>
   );
 }
