@@ -6,72 +6,116 @@ import Footer from '../components/Footer';
 import SOPCard from '../components/SOPCard';
 import { useAuth } from '../hooks/useAuth';
 
+
 export default function MySOPList() {
-  const { user, loading: isAuthLoading } = useAuth();
-  const navigate = useNavigate();
 
-  const [keyword, setKeyword] = useState('');
-  const [sops, setSops] = useState([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+    const { user, loading: isAuthLoading } = useAuth();
+    const navigate = useNavigate();
 
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [keyword, setKeyword] = useState('');
+    const [sops, setSops] = useState([]);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
 
-  const pageSize = 8;
-  const totalPages = Math.ceil(total / pageSize);
+    const [newTitle, setNewTitle] = useState('');
+    const [newDesc, setNewDesc] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-  /* ---------------- 取資料 ---------------- */
-  const fetchSops = async ({ keyword, pageNum }) => {
-    setIsLoading(true);
-    try {
-      const qs = new URLSearchParams();
-      if (keyword.trim()) qs.append('keyword', keyword.trim());
-      qs.append('team', user.team);          // 傳 Q03（Team_ID）
-      qs.append('page', 'my');                
-      qs.append('pageNum', pageNum); 
+    const pageSize = 8;
+    const totalPages = Math.ceil(total / pageSize);
 
-      const res = await fetch(`/api/sops/search?${qs}`);
-      if (!res.ok) throw new Error('API 呼叫失敗');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
-      const result = await res.json();
-      const normalize = (item) => ({
-        id: item.id ?? item.SOP_ID,
-        title: item.title ?? item.SOP_Name,
-        description: item.description ?? item.SOP_Content,
-        team: item.team ?? item.Team_Name ?? item.Team_in_charge,
-        published: item.is_publish // ← 改這行
-      });
+    const handleGenerateReport = async () => {
+        if (!startDate || !endDate) {
+            alert("請選擇起訖日期");
+            return;
+        }
 
-      const formatted = Array.isArray(result) ? result.map(normalize) : [];
-      setSops(formatted);
-      setTotal(formatted.length);
-      setPage(page);
-    } catch (err) {
-      console.error('[MySOP] fetch error', err);
-      setSops([]);
-      setTotal(0);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        try {
+            const params = new URLSearchParams({
+                teamName: user.team, // 🔸 注意：這是你登入者的 team
+                start_time: startDate,
+                end_time: endDate
+            });
 
-  useEffect(() => {
-    if (!isAuthLoading && user) fetchSops({ keyword: '', pageNum: 1 });
-  }, [user, isAuthLoading]);
+            const response = await fetch(`/api/report/export?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/octet-stream'
+                }
+            });
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    fetchSops({ keyword, pageNum: 1 });
-  };
+            if (!response.ok) throw new Error("報表下載失敗");
 
-  const handlePageClick = (next) => {
-    if (next < 1 || next > totalPages || next === page) return;
-    fetchSops({ keyword, pageNum: next });
-  };
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.setAttribute("download", `SOP_Report_${user.team}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error("❌ 產生報表錯誤:", err);
+            alert("下載失敗，請稍後再試");
+        }
+    };
+
+
+    /* ---------------- 取資料 ---------------- */
+    const fetchSops = async ({ keyword, pageNum }) => {
+        setIsLoading(true);
+        try {
+            const qs = new URLSearchParams();
+            if (keyword.trim()) qs.append('keyword', keyword.trim());
+            qs.append('team', user.team);          // 傳 Q03（Team_ID）
+            qs.append('page', 'my');
+            qs.append('pageNum', pageNum);
+
+            const res = await fetch(`/api/sops/search?${qs}`);
+            if (!res.ok) throw new Error('API 呼叫失敗');
+
+            const result = await res.json();
+
+            const normalize = (item) => ({
+                id: item.id ?? item.SOP_ID,
+                title: item.title ?? item.SOP_Name,
+                description: item.description ?? item.SOP_Content,
+                team: item.team ?? item.Team_Name ?? item.Team_in_charge,
+                published: item.is_publish // ← 改這行
+            });
+
+            const formatted = Array.isArray(result) ? result.map(normalize) : [];
+            setSops(formatted);
+            setTotal(formatted.length);
+            setPage(page);
+        } catch (err) {
+            console.error('[MySOP] fetch error', err);
+            setSops([]);
+            setTotal(0);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isAuthLoading && user) fetchSops({ keyword: '', pageNum: 1 });
+    }, [user, isAuthLoading]);
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        fetchSops({ keyword, pageNum: 1 });
+    };
+
+    const handlePageClick = (next) => {
+        if (next < 1 || next > totalPages || next === page) return;
+        fetchSops({ keyword, pageNum: next });
+    };
 
   const handleCreateSop = async () => {
     if (!newTitle.trim()) return alert('請輸入 SOP 標題');
@@ -100,7 +144,7 @@ export default function MySOPList() {
       setIsCreating(false);
     }
   };
-const handleTogglePublish = async (sopId, nextStatus) => {
+  const handleTogglePublish = async (sopId, nextStatus) => {
     try {
       const response = await fetch(`/api/sops/${sopId}/update_publish?is_publish=${nextStatus}`, {
         method: 'PUT',
@@ -121,46 +165,100 @@ const handleTogglePublish = async (sopId, nextStatus) => {
     }
   };
   
-  if (isAuthLoading || !user)
+
+
+    if (isAuthLoading || !user)
+        return (
+            <>
+                <NavBar />
+                <div className="text-center py-20 text-gray-600 text-lg">
+                    載入使用者資訊中...
+                </div>
+                <Footer />
+            </>
+        );
+  
     return (
-      <>
-        <NavBar />
-        <div className="text-center py-20 text-gray-600 text-lg">
-          載入使用者資訊中...
-        </div>
-        <Footer />
-      </>
-    );
+        <>
+            <NavBar />
+            <header className="bg-secondary py-12 text-center">
+                <h1 className="text-3xl font-bold text-primary mb-2">我的 SOP</h1>
+                <p className="text-lg">
+                    所屬部門：{user.teamName ?? user.team}
+                </p>
 
-  return (
-    <>
-      <NavBar />
-      <header className="bg-secondary py-12 text-center">
-        <h1 className="text-3xl font-bold text-primary mb-2">我的 SOP</h1>
-        <p className="text-lg">所屬部門：{user.teamName ?? user.team}</p>
-        <form onSubmit={handleSearchSubmit} className="mt-8 flex flex-col items-center gap-4 w-full max-w-xl mx-auto">
-          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="輸入關鍵字搜尋..." className="w-full border rounded px-4 py-2" />
-          <button type="submit" disabled={isLoading} className="bg-primary text-white px-10 py-2 rounded disabled:opacity-70">搜尋</button>
-        </form>
-      </header>
+                <form
+  onSubmit={handleSearchSubmit}
+  className="mt-8 flex flex-row items-center justify-center gap-4 w-full max-w-xl mx-auto"
+>
+  <input
+    value={keyword}
+    onChange={(e) => setKeyword(e.target.value)}
+    placeholder="輸入關鍵字搜尋..."
+    className="flex-grow border rounded px-4 py-2"
+  />
+  <button
+    type="submit"
+    disabled={isLoading}
+    className="bg-primary text-white px-6 py-2 rounded disabled:opacity-70 whitespace-nowrap"
+  >
+    搜尋
+  </button>
+</form>
 
-      <main className="py-10 px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {isLoading ? (
-            <div className="col-span-full text-center text-gray-500 py-16">載入中...</div>
-          ) : sops.length ? (
-            sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable showToggle 
-            onToggle={handleTogglePublish} iconMode="history"/>)
-          ) : (
-            <div className="col-span-full flex flex-col items-center text-gray-500 py-16">
-              <div className="text-5xl mb-4">😔</div>
-              <p className="text-lg font-medium">找不到符合條件的 SOP</p>
-              <p className="text-sm mt-2">請嘗試調整搜尋關鍵字或篩選條件</p>
-            </div>
-          )}
-        </div>
 
-        <div className="bg-white border shadow-sm rounded-lg p-10 mt-20">
+                <div className="mt-6 flex flex-col items-center gap-3">
+                    <div className="flex flex-wrap justify-center items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-gray-700">從</label>
+                            <input
+                                type="date"
+                                className="border rounded px-3 py-2 text-sm"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-gray-700">至</label>
+                            <input
+                                type="date"
+                                className="border rounded px-3 py-2 text-sm"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
+                        </div>
+                        <button
+                            className="bg-primary text-white px-6 py-2 rounded hover:bg-primary/90"
+                            onClick={handleGenerateReport}
+                        >
+                            📄 產生報表
+                        </button>
+                    </div>
+                </div>
+
+
+            </header>
+
+            <main className="py-10 px-6 max-w-7xl mx-auto">
+                {/* 卡片區 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {isLoading ? (
+                        <div className="col-span-full text-center text-gray-500 py-16">
+                            載入中...
+                        </div>
+                    ) : sops.length ? (
+                        sops.map((sop) => <SOPCard key={sop.id} sop={sop} editable showToggle
+                            onToggle={handleTogglePublish} iconMode="history" />)
+                    ) : (
+                        <div className="col-span-full flex flex-col items-center text-gray-500 py-16">
+                            <div className="text-5xl mb-4">😔</div>
+                            <p className="text-lg font-medium">找不到符合條件的 SOP</p>
+                            <p className="text-sm mt-2">請嘗試調整搜尋關鍵字或篩選條件</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-white border shadow-sm rounded-lg p-10 mt-20">
           <h2 className="text-2xl font-bold text-center mb-8">新增 SOP</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>

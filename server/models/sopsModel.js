@@ -2,41 +2,74 @@ const db=require('../config/db')
 
 const getSopById = async (sopId) => {
   // 查 SOP 主資料
-  const [[sop]] = await db.execute(`SELECT SOP_ID, SOP_Name,Team_Name, Location, SOP_Content, Create_Time, is_publish
+  const [[sop]] = await db.execute(`
+    SELECT SOP_ID, SOP_Name, Team_ID, Team_Name, Location, SOP_Content, Create_Time, is_publish
     FROM SOP, Team 
-    WHERE Team_in_charge=Team_ID AND SOP_ID = ?`, [sopId]);
+    WHERE Team_in_charge = Team_ID AND SOP_ID = ?
+  `, [sopId]);
+
   if (!sop) return null;
-  
-  // find biggest Version
-  const[[version]]=await db.execute(`SELECT Max(Version) as New_Version
-    FROM Module
-    WHERE SOP_ID = ?`, [sopId]);
-  if (!version?.New_Version)  return null;
 
-  //查 Module
-  const [module] = await db.execute(`
-    SELECT Module_ID,  Title, Details,  staff_in_charge, type
+  // 查最大版本
+  const [[version]] = await db.execute(`
+    SELECT MAX(Version) as New_Version
     FROM Module
-    Where Version=?
-    AND SOP_ID =?
-    ORDER BY Module_ID ASC;`, [version.New_Version, sopId]);
+    WHERE SOP_ID = ?
+  `, [sopId]);
 
-  // 把 Module_ID 做成陣列
+  if (!version?.New_Version) return null;
+
+  const versionNumber = version.New_Version;
+
+  // 查 Module 資料
+  const [moduleRows] = await db.execute(`
+    SELECT M.Module_ID, M.Title, M.Details, M.staff_in_charge, M.type,
+           U.User_Name, D.Department_Name, D.Department_ID,
+           T.Team_Name, T.Team_ID, A.Ex_number, U.Email 
+    FROM Module M
+    LEFT JOIN Administrator A ON M.staff_in_charge = A.Administrator_ID
+    LEFT JOIN Team T ON T.Team_ID = A.Team_ID
+    LEFT JOIN Department D ON D.Department_ID = T.Department_ID
+    LEFT JOIN User U ON A.Personal_ID = U.Personal_ID
+    WHERE M.Version = ? AND M.SOP_ID = ?
+    ORDER BY M.Module_ID ASC
+  `, [versionNumber, sopId]);
+
+  // 把每個 module 加上 form_links
+  const module = await Promise.all(moduleRows.map(async (m) => {
+    const [formRows] = await db.execute(`
+      SELECT Link, Link_Name
+      FROM Form_Link
+      WHERE Module_ID = ? AND Version_Link = ?
+    `, [m.Module_ID, versionNumber]);
+
+    return {
+      ...m,
+      form_links: formRows
+    };
+  }));
+
+  // 查 Edges
   const moduleIds = module.map(m => m.Module_ID);
-  
   const placeholders = moduleIds.map(() => '?').join(',');
 
-  // 查 edges
   const [edges] = await db.execute(`
-    SELECT  from_module, to_module
+    SELECT from_module, to_module
     FROM Edges
-    Where Version_Edge=?
-    AND (from_module IN (${placeholders}) OR to_module IN (${placeholders}))
-    ORDER BY Edge_ID ASC;`, [version.New_Version, ...moduleIds, ...moduleIds]);
+    WHERE Version_Edge = ?
+      AND (from_module IN (${placeholders}) OR to_module IN (${placeholders}))
+    ORDER BY Edge_ID ASC
+  `, [versionNumber, ...moduleIds, ...moduleIds]);
 
-  
-  return {sop, version: version.New_Version, module, edges};
+  // 回傳整體 SOP 結構
+  return {
+    sop,
+    version: versionNumber,
+    module,
+    edges
+  };
 };
+
 
 const gethistorysop = async (sopId, version) => {
   // 查 SOP 主資料
@@ -255,6 +288,7 @@ const gethistorylist = async (sopId) => {
   return {sop, history};
 };
 
+
 async function insertSOPLog(sopId, adminId, logText) {
   try {
     const conn = await pool.getConnection();
@@ -271,7 +305,9 @@ async function insertSOPLog(sopId, adminId, logText) {
   }
 }
 
+
 //Concurreny Control
+
 async function getSopForUpdate(conn, sopId) {
   if (!sopId) throw new Error('SOP_ID is required');
   const [rows] = await conn.execute(
@@ -298,5 +334,9 @@ async function updateSopStatus(conn, sopId, status, editor = null, editor_id = n
 module.exports = { getSopById, gethistorysop, searchPublicSops,
   searchMySops,searchSavedSops,createSop,updateSopinfo,checkIfSaved,
   saveSopForUser,unsaveSopForUser, gethistorylist,getSopForUpdate,
-  updateSopStatus, insertSOPLog};
+
+  updateSopStatus,insertSOPLog};
+
+
+
 

@@ -13,11 +13,20 @@ const getLatestViewId = async () => {
   
 // 新增一筆 VIEW 紀錄
 const insertViewRecord = async (viewId, sopId, personalId) => {
+  try {
     await db.execute(
       'INSERT INTO Views (View_ID, SOP_ID, Personal_ID) VALUES (?, ?, ?)',
       [viewId, sopId, personalId]
     );
-  };
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      console.warn(`[InsertView] 忽略重複主鍵 ${viewId}`);
+    } else {
+      console.error('[InsertView] 發生錯誤：', err);
+    }
+  }
+};
+
 
 // 計算SOP總瀏覽數
 const Viewers_NUM = async (sopId) => {

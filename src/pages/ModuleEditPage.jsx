@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
+import StepNodeEdit from '../components/StepNodeEdit'; // 路徑依實際調整
+
 import ReactFlow, {
   Background,
   Controls,
@@ -25,6 +27,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const PRIMARY = '#0f307a';
 
 /* ──────────── StepNode（Modal 與 CreatePage 同版型） ──────────── */
+/*
 function StepNode({ data, selected }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -116,7 +119,7 @@ function StepNode({ data, selected }) {
               </div>
             </div>
 
-            {/* footer */}
+            
             <div className="flex justify-end gap-3 pt-6">
               <AlertDialog.Root>
                 <AlertDialog.Trigger asChild>
@@ -170,7 +173,7 @@ function StepNode({ data, selected }) {
     </>
   );
 }
-
+*/
 /* ──────────── 主頁面 ──────────── */
 export default function ModuleEditPage() {
   const { id } = useParams();
@@ -201,9 +204,12 @@ export default function ModuleEditPage() {
           type: 'step',
           data: {
             title: m.Title,
-            detail: m.Details,
+            details: m.Details,                      // ✅ 修改 key 名
             person: m.staff_in_charge,
-            docs: m.form_links?.[0]?.Link || '',
+            formLinks: Array.isArray(m.form_links)   // ✅ 修改 key 名
+              ? m.form_links
+              : [],
+
             onSave: (form) =>
               setNodes((prev) =>
                 prev.map((n) =>
@@ -283,7 +289,7 @@ export default function ModuleEditPage() {
     [setEdges]
   );
 
-  const nodeTypes = useMemo(() => ({ step: StepNode }), []);
+  const nodeTypes = useMemo(() => ({ step: StepNodeEdit }), []);
 
   /* 3. 儲存至後端 */
   const handleSave = async () => {

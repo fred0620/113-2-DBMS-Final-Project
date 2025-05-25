@@ -63,20 +63,24 @@ export default function ModulePage() {
   /* 檢查是否已收藏 */
   useEffect(() => {
     if (!user || !id) return;
+  
     (async () => {
       try {
-        const res = await fetch(`/api/sops/search?Personal_ID=${user.id}`);
+        const res = await fetch(`/api/sops/search?page=save&personal_id=${user.id}`);
         if (!res.ok) throw new Error("check collection failed");
+  
         const result = await res.json();
-        const collectedIds = result.map((s) => s.id);
+        const collectedIds = result.map((s) => s.id ?? s.SOP_ID); // ⛑ 保險：兼容不同欄位命名
         setCollected(collectedIds.includes(id));
       } catch (err) {
         console.error("檢查收藏狀態失敗:", err);
+        setCollected(false);
       }
     })();
   }, [user, id]);
+  
 
-  /* 收藏 / 取消收藏 */
+  /* 收藏 / 取消收藏 
   const toggleCollect = async () => {
     if (!user) return alert("請先登入");
     const endpoint = collected ? "unsave" : "save";
@@ -88,7 +92,7 @@ export default function ModulePage() {
     } catch (err) {
       console.error("收藏操作失敗:", err);
     }
-  };
+  };*/
 
   /* 產生 ReactFlow nodes / edges */
   const rfData = useMemo(() => {
@@ -121,6 +125,44 @@ export default function ModulePage() {
     return layout(steps, edges);
   }, [sop]);
 
+  const handleCollect = async () => {
+    if (!user?.id) {
+      alert("請先登入才能收藏 SOP");
+      return;
+    }
+  
+    const payload = {
+      SOP_ID: id,
+      Personal_ID: user.id,
+    };
+  
+    console.log("📦 傳給後端的收藏參數：", payload);
+  
+    try {
+      const res = await fetch("/api/sops/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+  
+      const result = await res.json();
+      if (res.ok) {
+        setCollected(true);
+        alert(result.message);
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      console.error("❌ 收藏失敗:", err);
+      alert("收藏失敗，請稍後再試。");
+    }
+  };
+  
+  
+
+
   const nodeTypes = useMemo(() => ({ stepView: StepNodeView }), []);
 
   if (!sop) {
@@ -137,18 +179,18 @@ export default function ModulePage() {
   const formatDate = (dt) =>
     dt
       ? new Date(dt).toLocaleString("zh-TW", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        })
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
       : "（無資料）";
 
   return (
     <>
-      <NavBar />
+            <NavBar />
       <header className="bg-secondary py-6 text-center">
         <h1 className="text-3xl font-bold text-primary">{info.SOP_Name}</h1>
       </header>
@@ -214,14 +256,33 @@ export default function ModulePage() {
           </button>
 
           <button
-            onClick={toggleCollect}
+            onClick={async () => {
+              if (!user?.id) return alert("請先登入才能收藏 SOP");
+              try {
+                const response = await fetch(`/api/sops/${collected ? 'unsave' : 'save'}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ SOP_ID: id, Personal_ID: user.id }),
+                });
+                if (!response.ok) throw new Error('操作失敗');
+                const result = await response.json();
+                alert(result.message);
+                setCollected(!collected);
+              } catch (err) {
+                console.error('❌ 收藏操作失敗:', err);
+                alert('操作失敗，請稍後再試');
+              }
+            }}
             className="bg-primary text-white px-6 py-2 rounded text-sm hover:bg-primary/90"
           >
-            {collected ? "已收藏" : "收藏"}
+            {collected ? "取消收藏" : "收藏"}
           </button>
         </div>
       </main>
       <Footer />
+
     </>
   );
 }
