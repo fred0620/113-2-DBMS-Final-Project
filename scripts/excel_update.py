@@ -23,5 +23,5 @@ if __name__ == "__main__":
             wb = update_excel_table(wb, sheet_name, table_name, data, start_col=3)
 
     wb.save(output_path)
-    print(f"✅ Excel 多表格更新完成，輸出至 {output_path}")
+    print(f"[OK] Excel 多表格更新完成，輸出至 {output_path}")
 
