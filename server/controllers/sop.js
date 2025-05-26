@@ -350,4 +350,33 @@ const updateSopStatus = async (req, res) => {
 };
 
 
-module.exports = { getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory,updateSopStatus  };
+
+const Checkstatus = async (req, res) => {
+  const sopId = req.params.sop_id;
+
+  try {
+    const [[sop]] = await db.query(`
+      SELECT status, edit_name, TIMESTAMPDIFF(MINUTE, last_updated_time, NOW()) AS minutes_passed
+      FROM SOP
+      WHERE SOP_ID = ?
+    `, [sopId]);
+
+    if (!sop) return res.status(404).json({ error: 'SOP not found' });
+
+    if (sop.status === 'updating' && sop.minutes_passed < 3) {
+      return res.json({
+        status: 'reject',
+        edit_name: sop.edit_name || '其他人',
+      });
+    }
+
+    return res.json({ status: 'ok' });
+  } catch (err) {
+    console.error('[CHECK STATUS ERROR]', err);
+    res.status(500).json({ error: '伺服器錯誤' });
+  }
+};
+
+
+
+module.exports = { Checkstatus,getSopPage,searchSops,getModule,createSOP,updateSopinfo,saveSop ,unsaveSop, historylist, displayhistory,updateSopStatus  };

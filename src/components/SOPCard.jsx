@@ -55,11 +55,11 @@ export default function SOPCard({
     <div className="relative border rounded-lg p-4 bg-gray-50 flex flex-col justify-between h-60 max-w-xs shadow-sm hover:shadow-md transition-shadow">
       
       {/* 🔒 編輯中標籤 */}
-      {locked && (
+      {/*locked && (
         <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded">
-          🔒 編輯中：{sop.editor}
+        //  🔒 編輯中：{sop.editor}
         </span>
-      )}
+      )*/}
 
       {/* ✅ 歷史版本 Modal */}
       {showHistory && (
@@ -174,10 +174,20 @@ export default function SOPCard({
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-primary text-white hover:bg-primary/90'
             }`}
-            onClick={(e) => {
-              if (locked) {
-                e.preventDefault();
-                alert(`此 SOP 正由 ${sop.editor || '其他人'} 編輯中，請稍後再試`);
+            onClick={async (e) => {
+              e.preventDefault();
+              try {
+                const res = await fetch(`/api/sops/${sop.id}/status-check`);
+                const result = await res.json();
+
+                if (result.status === 'reject') {
+                  alert(`此 SOP 正由 ${result.edit_name} 編輯中，請稍後再試`);
+                } else {
+                  navigate(`/sop/${sop.id}/edit`);
+                }
+              } catch (err) {
+                alert('檢查狀態失敗，請稍後再試');
+                console.error('🔍 編輯前檢查錯誤:', err);
               }
             }}
 >

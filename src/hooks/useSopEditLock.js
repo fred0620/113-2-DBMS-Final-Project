@@ -15,8 +15,8 @@ export default function useSopEditLock(sopId, user) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status,                        // 'updating' or 'finish'
-          edit_name: user?.username || 'unknown',
-          editor_id: user?.adminId || 'unknown',
+          editor: user?.username || 'unknown',
+          Admin_ID: user?.adminId || 'unknown',
         }),
       });
 
@@ -34,7 +34,7 @@ export default function useSopEditLock(sopId, user) {
   };
 
   useEffect(() => {
-    if (!sopId || !user?.id || !user?.name) return;
+    if (!sopId || !user?.adminId || !user?.username) return;
 
     send('updating'); // 初次上鎖
     timer.current = setInterval(() => send('updating'), 120_000); // 每 2 分鐘心跳
