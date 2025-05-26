@@ -87,7 +87,9 @@ export default function MySOPList() {
                 title: item.title ?? item.SOP_Name,
                 description: item.description ?? item.SOP_Content,
                 team: item.team ?? item.Team_Name ?? item.Team_in_charge,
-                published: item.is_publish // ← 改這行
+                status: item.status,           // 🔒 新增鎖定狀態欄位
+                editor: item.edit_name,        // 🔒 新增編輯者欄位
+                published: item.is_publish, // ← 改這行
             });
 
             const formatted = Array.isArray(result) ? result.map(normalize) : [];

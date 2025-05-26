@@ -213,7 +213,10 @@ if (locked) return null;
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/sops/${id}/flowchart`);
+        const queryParams = user?.id
+          ? `?Personal_ID=${encodeURIComponent(user.id)}`
+          : '';
+        const res = await fetch(`${API_BASE}/api/sops/${id}/flowchart${queryParams}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { data } = await res.json();
         const { nodes: backendNodes = [], edges: backendEdges = [] } = data;

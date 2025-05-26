@@ -79,12 +79,30 @@ const gethistorysop = async (sopId, version) => {
   if (!sop) return null;
 
   //查 Module
-  const [module] = await db.execute(`
-    SELECT Module_ID,  Title, Details,  staff_in_charge, type
-    FROM Module
-    Where Version=?
-    AND SOP_ID =?
-    ORDER BY Module_ID ASC;`, [version, sopId]);
+  const [moduleRows] = await db.execute(`
+    SELECT M.Module_ID, M.Title, M.Details, M.staff_in_charge, M.type,
+           U.User_Name, D.Department_Name, D.Department_ID,
+           T.Team_Name, T.Team_ID, A.Ex_number, U.Email 
+    FROM Module M
+    LEFT JOIN Administrator A ON M.staff_in_charge = A.Administrator_ID
+    LEFT JOIN Team T ON T.Team_ID = A.Team_ID
+    LEFT JOIN Department D ON D.Department_ID = T.Department_ID
+    LEFT JOIN User U ON A.Personal_ID = U.Personal_ID
+    WHERE M.Version = ? AND M.SOP_ID = ?
+    ORDER BY M.Module_ID ASC`, [version, sopId]);
+
+  const module = await Promise.all(moduleRows.map(async (m) => {
+    const [formRows] = await db.execute(`
+      SELECT Link, Link_Name
+      FROM Form_Link
+      WHERE Module_ID = ? AND Version_Link = ?
+    `, [m.Module_ID, version]);
+
+    return {
+      ...m,
+      form_links: formRows
+    };
+  }));
 
   // 把 Module_ID 做成陣列
   const moduleIds = module.map(m => m.Module_ID);
@@ -168,7 +186,7 @@ const searchSavedSops = async (keyword = '', personalId) => {
 const searchMySops = async (keyword = '', teamName) => {
   let query = `
     SELECT SOP.SOP_ID as id, SOP.SOP_Name as title, SOP.SOP_Content as description,
-           Department.Department_Name as department, Team.Team_Name as team, SOP.is_publish
+           Department.Department_Name as department, Team.Team_Name as team, SOP.is_publish, SOP.status, SOP.edit_name, SOP.last_updated_time
     FROM SOP
     LEFT JOIN Team ON SOP.Team_in_charge = Team.Team_ID
     LEFT JOIN Department ON Team.Department_ID = Department.Department_ID

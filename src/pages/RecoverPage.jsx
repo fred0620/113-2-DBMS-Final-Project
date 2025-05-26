@@ -46,14 +46,16 @@ export default function RecoverPage() {
 
   const [sop, setSop] = useState(null);
   const [recovering, setRecovering] = useState(false);
+  const [view, setview] = useState(null);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch(`/api/sops/${id}/history/${version}`);
-        const { data } = await res.json();
+        const { views, data } = await res.json();
         console.log("📦 歷史版本資料：", data);
         setSop({ raw: data });
+        setview({ raw: views });
       } catch (err) {
         console.error("[RecoverPage] 取得歷史版本失敗:", err);
       }
@@ -67,12 +69,20 @@ export default function RecoverPage() {
       id: n.Module_ID,
       type: "stepView",
       data: {
+        id: n.Module_ID,
         title: n.Title,
         brief: n.Title.length > 26 ? n.Title.slice(0, 23) + "…" : n.Title,
         details: n.Details,
         person: n.staff_in_charge,
-        docs: n.docs || [],
+        person_name: n.User_Name,
+        email: n.Email,
+        ex_number: n.Ex_number,
+        departmentname: n.Department_Name,
+        team_name: n.Team_Name,
         type: n.type,
+        formLinks: Array.isArray(n.form_links)   // ✅ 修改 key 名
+        ? n.form_links
+        : [],
       },
       position: { x: 0, y: 0 },
       draggable: false,
@@ -129,8 +139,8 @@ export default function RecoverPage() {
             <p><strong>部門：</strong>{info.Team_Name}</p>
             <p className="mt-1"><strong>位置：</strong>{info.Location ?? "（無資料）"}</p>
             <p className="mt-1"><strong>簡介：</strong>{info.SOP_Content ?? "（無資料）"}</p>
-            <p className="mt-1"><strong>最後編輯時間：</strong>{formatDate(info.Create_Time)}</p>
-            <p className="mt-1"><strong>SOP 瀏覽次數：</strong>{info.views ?? "（無資料）"}</p>
+            <p className="mt-1"><strong>創建時間：</strong>{formatDate(info.Create_Time)}</p>
+            <p className="mt-1"><strong>版本紀錄：</strong>{version}</p>
           </aside>
           <section className="flex-1 h-[650px] border rounded shadow overflow-auto bg-[#f9fafb]">
             <ReactFlow

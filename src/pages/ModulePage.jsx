@@ -51,7 +51,10 @@ export default function ModulePage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/sops/${id}/flowchart`);
+        const queryParams = user?.id
+          ? `?Personal_ID=${encodeURIComponent(user.id)}`
+          : '';
+        const res = await fetch(`/api/sops/${id}/flowchart${queryParams}`);
         if (!res.ok) throw new Error("fetch fail");
         const { views, data } = await res.json();
         setSop({ raw: data });
@@ -230,7 +233,7 @@ if (!sop) {
               {info.SOP_Content ?? "（無資料）"}
             </p>
             <p className="mt-1">
-              <strong>最後編輯時間：</strong>
+              <strong>創建時間：</strong>
               {formatDate(info.Create_Time)}
             </p>
             <p className="mt-1">
