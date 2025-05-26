@@ -13,11 +13,13 @@ export default function Footer() {
 
         {/* 使用條款 */}
         <div className="min-w-[120px] text-left">
-          <a href="https://www.nccu.edu.tw/p/426-1000-30.php?Lang=zh-tw" className="hover:underline whitespace-nowrap">
+          <a href="https://www.nccu.edu.tw/p/426-1000-30.php?Lang=zh-tw" target="_blank"
+            rel="noopener noreferrer" className="hover:underline whitespace-nowrap">
              尊重智慧財產權
           </a>
           <a> | </a>
-          <a href="https://www.nccu.edu.tw/p/426-1000-25.php?Lang=zh-tw" className="hover:underline whitespace-nowrap">
+          <a href="https://www.nccu.edu.tw/p/426-1000-25.php?Lang=zh-tw" target="_blank"
+            rel="noopener noreferrer" className="hover:underline whitespace-nowrap">
              網路使用規範要點
           </a>
           <p>本網站著作權屬於國立政治大學</p>
