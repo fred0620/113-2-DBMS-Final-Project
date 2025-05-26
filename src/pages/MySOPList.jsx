@@ -269,7 +269,7 @@ export default function MySOPList() {
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1">簡介</label>
-              <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="輸入 SOP 簡介" rows={5} className="border w-full rounded px-4 py-2 text-sm resize-none" />
+              <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="輸入 SOP 簡介" rows={5} className="border w-full rounded px-4 py-2 text-sm resize-y" />
             </div>
           </div>
           <AlertDialog.Root open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
