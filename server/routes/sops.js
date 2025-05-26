@@ -30,5 +30,6 @@ router.post('/:sop_id/recover/:version', update.recoversop);
 
 //Concurrency Control
 router.patch('/:sop_id/status', ctrl.updateSopStatus);
+router.get('/:sop_id/status-check', ctrl.Checkstatus);
 
 module.exports = router;

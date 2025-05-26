@@ -59,6 +59,7 @@ export default function RecoverPage() {
 
   const [sop, setSop] = useState(null);
   const [recovering, setRecovering] = useState(false);
+  const [view, setview] = useState(null);
   const [updateTime, setUpdateTime] = useState(null); // ✅ 加入 Update_Time 狀態
 
   // 主版本資料
@@ -66,8 +67,10 @@ export default function RecoverPage() {
     (async () => {
       try {
         const res = await fetch(`/api/sops/${id}/history/${version}`);
-        const { data } = await res.json();
+        const { views, data } = await res.json();
+        console.log("📦 歷史版本資料：", data);
         setSop({ raw: data });
+        setview({ raw: views });
       } catch (err) {
         console.error("[RecoverPage] 取得歷史版本失敗:", err);
       }
@@ -101,7 +104,15 @@ export default function RecoverPage() {
         brief: n.Title.length > 26 ? n.Title.slice(0, 23) + "…" : n.Title,
         details: n.Details,
         person: n.staff_in_charge,
+        person_name: n.User_Name,
+        email: n.Email,
+        ex_number: n.Ex_number,
+        departmentname: n.Department_Name,
+        team_name: n.Team_Name,
         type: n.type,
+        formLinks: Array.isArray(n.form_links)   // ✅ 修改 key 名
+        ? n.form_links
+        : [],
       },
       position: { x: 0, y: 0 },
       style: { width: NODE_W, height: NODE_H },

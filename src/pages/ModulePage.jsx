@@ -51,7 +51,10 @@ export default function ModulePage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/sops/${id}/flowchart`);
+        const queryParams = user?.id
+          ? `?Personal_ID=${encodeURIComponent(user.id)}`
+          : '';
+        const res = await fetch(`/api/sops/${id}/flowchart${queryParams}`);
         if (!res.ok) throw new Error("fetch fail");
         const { views, data } = await res.json();
         setSop({ raw: data });
@@ -110,7 +113,15 @@ export default function ModulePage() {
         brief: n.Title.length > 26 ? n.Title.slice(0, 23) + "…" : n.Title,
         details: n.Details,
         person: n.staff_in_charge,
+        person_name: n.User_Name,
+        email: n.Email,
+        ex_number: n.Ex_number,
+        departmentname: n.Department_Name,
+        team_name: n.Team_Name,
         type: n.type,
+        formLinks: Array.isArray(n.form_links)   // ✅ 修改 key 名
+        ? n.form_links
+        : [],
       },
       position: { x: 0, y: 0 },
       style: { width: NODE_W, height: NODE_H },
@@ -222,7 +233,7 @@ if (!sop) {
               {info.SOP_Content ?? "（無資料）"}
             </p>
             <p className="mt-1">
-              <strong>最後編輯時間：</strong>
+              <strong>創建時間：</strong>
               {formatDate(info.Create_Time)}
             </p>
             <p className="mt-1">

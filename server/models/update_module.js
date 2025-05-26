@@ -143,6 +143,7 @@ const create_module = async (module,editor, sopId, version, connection) => {
             .map(linkObj => [
               module.Module_ID,
               linkObj.Link,
+              linkObj.Link_Name,
               version
             ]);
           acc.push(...links);
@@ -154,7 +155,7 @@ const create_module = async (module,editor, sopId, version, connection) => {
       // 4. 如果有 form_links 資料，批量插入到 Form_Link 表
       if (formLinkValues.length > 0) {
         await connection.query(`
-          INSERT INTO Form_Link (Module_ID, Link, Version_Link)
+          INSERT INTO Form_Link (Module_ID, Link,Link_Name, Version_Link)
           VALUES ?
         `, [formLinkValues]);
       }
